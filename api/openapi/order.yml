@@ -1,0 +1,123 @@
+openapi: 3.0.3
+info:
+  title: order service
+  description: order service
+  version: 1.0.0
+servers:
+  - url: 'http://{hostname}/api'
+    variables:
+      hostname:
+        default: localhost
+paths:
+  /customer/{customerID}/order/{orderID}:
+    get:
+      description: Get order by customer ID and order ID
+      parameters:
+        - name: customerID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: orderID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        default:
+          description: 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /customer/{customerID}/order:
+    post:
+      description: Create order by customer ID
+      parameters:
+        - name: customerID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '200':
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        default:
+          description: 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+components:
+  schemas:
+    Order:
+      type: object
+      properties:
+        id: 
+          type: string
+        customerID:
+          type: string
+        status:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+        paymentLinkd:
+          type: string
+    Item:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        priceID:
+          type: string
+    CreateOrderRequest:
+      type: object
+      required:
+        - customerID
+        - items
+      properties:
+        customerID:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemWithQuantity'
+    ItemWithQuantity:
+      type: object
+      properties:
+        id:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+    

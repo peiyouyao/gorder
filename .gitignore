@@ -1,0 +1,95 @@
+# ===== Node.js / Frontend =====
+node_modules/
+dist/
+build/
+.npm/
+.cache/
+.vite/
+coverage/
+*.log
+
+# ===== React Native / Expo (可选) =====
+.expo/
+.expo-shared/
+
+# ===== Vue / Vite / Webpack =====
+*.local
+*.temp
+*.bak
+*.old
+
+# ===== Python / Flask / Django =====
+__pycache__/
+*.py[cod]
+*.pyo
+env/
+venv/
+*.egg-info/
+
+# ===== Java / Maven / Gradle =====
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+target/
+build/
+out/
+.gradle/
+.idea/
+*.log
+
+# ===== Go =====
+bin/
+vendor/
+*.test
+*.exe
+*.out
+*.mod
+
+# ===== Rust (如有) =====
+/target/
+
+# ===== IntelliJ / VSCode / IDE =====
+*.iws
+*.ipr
+*.iml
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# ===== Logs / System =====
+*.log
+*.pid
+*.seed
+*.pid.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===== Docker / Containers =====
+docker-compose.override.yml
+.env
+.env.*
+.env.local
+.dockerignore
+
+# ===== Others (general binary/filesystem trash) =====
+*.bak
+*.tmp
+*.temp
+*.old
+*.orig
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ===== Test / Coverage / Reports =====
+coverage/
+test-results/
+junit-report/
+lcov-report/
+/dump.rdb
