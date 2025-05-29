@@ -4,12 +4,15 @@ import (
 	context "context"
 
 	"github.com/PerryYao-GitHub/gorder/common/genproto/stockpb"
+	"github.com/PerryYao-GitHub/gorder/stock/app"
 )
 
-type GRPCServer struct{}
+type GRPCServer struct {
+	app app.Application
+}
 
-func NewGRPCServer() *GRPCServer {
-	return &GRPCServer{}
+func NewGRPCServer(app app.Application) *GRPCServer {
+	return &GRPCServer{app: app}
 }
 
 // impl stockpb.StockServiceServer

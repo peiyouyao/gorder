@@ -1,7 +1,7 @@
 syntax = "proto3";
 package orderpb;
 
-option go_package = "github.com/PerrYao-GitHub/gorder/interal/common/genproto/orderpb";
+option go_package = "github.com/PerryYao-GitHub/gorder/common/genproto/orderpb";
 
 import "google/protobuf/empty.proto";
 
@@ -16,14 +16,21 @@ message CreateOrderRequest {
   repeated ItemWithQuantity Items = 2;
 }
 
+message GetOrderRequest {
+  string OrderID = 1;
+  string CustomerID = 2;
+}
+
 message ItemWithQuantity {
   string ID = 1;
   int32 Quantity = 2;
 }
 
-message GetOrderRequest {
-  string OrderID = 1;
-  string CustomerID = 2;
+message Item {
+  string ID = 1;
+  string Name = 2;
+  int32 Quantity = 3;
+  string PriceID = 4;
 }
 
 message Order {
@@ -31,11 +38,5 @@ message Order {
   string CustomerID = 2;
   string Status = 3;
   repeated Item Items = 4;
-}
-
-message Item {
-  string ID = 1;
-  string Name = 2;
-  string Quantity = 3;
-  string Price = 4;
+  string PaymentLink = 5;
 }

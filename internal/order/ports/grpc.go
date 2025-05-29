@@ -4,14 +4,17 @@ import (
 	context "context"
 
 	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
+	"github.com/PerryYao-GitHub/gorder/order/app"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type GRPCServer struct{}
+type GRPCServer struct {
+	app app.Application
+}
 
-func NewGRPCServer() *GRPCServer {
-	return &GRPCServer{}
+func NewGRPCServer(app app.Application) *GRPCServer {
+	return &GRPCServer{app: app}
 }
 
 // impl orderpb.OrderServiceServer

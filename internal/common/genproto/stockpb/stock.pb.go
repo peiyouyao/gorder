@@ -24,7 +24,7 @@ const (
 
 type GetItemsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ItemsIDs      []string               `protobuf:"bytes,1,rep,name=ItemsIDs,proto3" json:"ItemsIDs,omitempty"`
+	ItemIDs       []string               `protobuf:"bytes,1,rep,name=ItemIDs,proto3" json:"ItemIDs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -59,9 +59,9 @@ func (*GetItemsRequest) Descriptor() ([]byte, []int) {
 	return file_stockpb_stock_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetItemsRequest) GetItemsIDs() []string {
+func (x *GetItemsRequest) GetItemIDs() []string {
 	if x != nil {
-		return x.ItemsIDs
+		return x.ItemIDs
 	}
 	return nil
 }
@@ -210,9 +210,9 @@ var File_stockpb_stock_proto protoreflect.FileDescriptor
 
 const file_stockpb_stock_proto_rawDesc = "" +
 	"\n" +
-	"\x13stockpb/stock.proto\x12\astockpb\x1a\x13orderpb/order.proto\"-\n" +
-	"\x0fGetItemsRequest\x12\x1a\n" +
-	"\bItemsIDs\x18\x01 \x03(\tR\bItemsIDs\"7\n" +
+	"\x13stockpb/stock.proto\x12\astockpb\x1a\x13orderpb/order.proto\"+\n" +
+	"\x0fGetItemsRequest\x12\x18\n" +
+	"\aItemIDs\x18\x01 \x03(\tR\aItemIDs\"7\n" +
 	"\x10GetItemsResponse\x12#\n" +
 	"\x05Items\x18\x01 \x03(\v2\r.orderpb.ItemR\x05Items\"M\n" +
 	"\x1aCheckIfItemsInStockRequest\x12/\n" +
@@ -222,7 +222,7 @@ const file_stockpb_stock_proto_rawDesc = "" +
 	"\x05Items\x18\x02 \x03(\v2\r.orderpb.ItemR\x05Items2\xb1\x01\n" +
 	"\fStockService\x12?\n" +
 	"\bGetItems\x12\x18.stockpb.GetItemsRequest\x1a\x19.stockpb.GetItemsResponse\x12`\n" +
-	"\x13CheckIfItemsInStock\x12#.stockpb.CheckIfItemsInStockRequest\x1a$.stockpb.CheckIfItemsInStockResponseBBZ@github.com/PerrYao-GitHub/gorder/interal/common/genproto/stockpbb\x06proto3"
+	"\x13CheckIfItemsInStock\x12#.stockpb.CheckIfItemsInStockRequest\x1a$.stockpb.CheckIfItemsInStockResponseB;Z9github.com/PerryYao-GitHub/gorder/common/genproto/stockpbb\x06proto3"
 
 var (
 	file_stockpb_stock_proto_rawDescOnce sync.Once
