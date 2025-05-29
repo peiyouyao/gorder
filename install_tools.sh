@@ -36,6 +36,7 @@ if [[ ":$PATH:" != *":$GOBIN:"* ]]; then
   echo "📌 将 Go bin 添加到 PATH 中（$GOBIN）"
   echo "export PATH=\"\$PATH:$GOBIN\"" >> ~/.bashrc
   export PATH="$PATH:$GOBIN"
+  export PATH=$PATH:$(go env GOPATH)/bin
 fi
 
 # 检查是否安装成功

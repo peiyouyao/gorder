@@ -4,7 +4,12 @@ import (
 	"log"
 
 	"github.com/PerryYao-GitHub/gorder/common/config"
+	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
+	"github.com/PerryYao-GitHub/gorder/common/server"
+	"github.com/PerryYao-GitHub/gorder/order/ports"
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
+	"google.golang.org/grpc"
 )
 
 func init() {
@@ -14,15 +19,22 @@ func init() {
 }
 
 func main() {
-	log.Print(viper.Get("order"))
-	// log.Println("Listening :8082")
-	// mux := http.NewServeMux()
-	// mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-	// 	log.Printf("%v", r.RequestURI)
-	// 	_, _ = io.WriteString(w, "pong")
-	// })
+	serviceName := viper.GetString("order.service-name")
+	serverType := viper.GetString("order.server-to-run")
+	if serverType != "http" && serverType != "grpc" {
+		panic("unexpected server type: " + serverType)
+	}
 
-	// if err := http.ListenAndServe(":8082", mux); err != nil {
-	// 	log.Fatal(err)
-	// }
+	go server.RunGRPCServer(serviceName, func(server *grpc.Server) {
+		svc := ports.NewGRPCServer()
+		orderpb.RegisterOrderServiceServer(server, svc)
+	})
+
+	server.RunHTTPServer(serviceName, func(router *gin.Engine) {
+		ports.RegisterHandlersWithOptions(router, &HTTPServer{}, ports.GinServerOptions{
+			BaseURL:      "/api",
+			Middlewares:  nil,
+			ErrorHandler: nil,
+		})
+	})
 }

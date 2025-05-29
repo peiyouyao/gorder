@@ -4,7 +4,7 @@
 // 	protoc        v3.21.12
 // source: orderpb/order.proto
 
-package orederpb
+package orderpb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -347,7 +347,7 @@ const file_orderpb_order_proto_rawDesc = "" +
 	"\fOrderService\x12B\n" +
 	"\vCreateOrder\x12\x1b.orderpb.CreateOrderRequest\x1a\x16.google.protobuf.Empty\x124\n" +
 	"\bGetOrder\x12\x18.orderpb.GetOrderRequest\x1a\x0e.orderpb.Order\x125\n" +
-	"\vUpdateOrder\x12\x0e.orderpb.Order\x1a\x16.google.protobuf.EmptyBCZAgithub.com/PerrYao-GitHub/gorder/interal/common/genproto/orederpbb\x06proto3"
+	"\vUpdateOrder\x12\x0e.orderpb.Order\x1a\x16.google.protobuf.EmptyBBZ@github.com/PerrYao-GitHub/gorder/interal/common/genproto/orderpbb\x06proto3"
 
 var (
 	file_orderpb_order_proto_rawDescOnce sync.Once
