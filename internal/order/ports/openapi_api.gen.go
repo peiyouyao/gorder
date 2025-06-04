@@ -14,11 +14,11 @@ import (
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (POST /customer/{customerID}/order)
-	PostCustomerCustomerIDOrder(c *gin.Context, customerID string)
-
 	// (GET /customer/{customerID}/order/{orderID})
 	GetCustomerCustomerIDOrderOrderID(c *gin.Context, customerID string, orderID string)
+
+	// (POST /customer/{customerID}/orders)
+	PostCustomerCustomerIDOrders(c *gin.Context, customerID string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -29,30 +29,6 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(c *gin.Context)
-
-// PostCustomerCustomerIDOrder operation middleware
-func (siw *ServerInterfaceWrapper) PostCustomerCustomerIDOrder(c *gin.Context) {
-
-	var err error
-
-	// ------------- Path parameter "customerID" -------------
-	var customerID string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "customerID", c.Param("customerID"), &customerID, runtime.BindStyledParameterOptions{Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter customerID: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.PostCustomerCustomerIDOrder(c, customerID)
-}
 
 // GetCustomerCustomerIDOrderOrderID operation middleware
 func (siw *ServerInterfaceWrapper) GetCustomerCustomerIDOrderOrderID(c *gin.Context) {
@@ -87,6 +63,30 @@ func (siw *ServerInterfaceWrapper) GetCustomerCustomerIDOrderOrderID(c *gin.Cont
 	siw.Handler.GetCustomerCustomerIDOrderOrderID(c, customerID, orderID)
 }
 
+// PostCustomerCustomerIDOrders operation middleware
+func (siw *ServerInterfaceWrapper) PostCustomerCustomerIDOrders(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "customerID" -------------
+	var customerID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "customerID", c.Param("customerID"), &customerID, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter customerID: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.PostCustomerCustomerIDOrders(c, customerID)
+}
+
 // GinServerOptions provides options for the Gin server.
 type GinServerOptions struct {
 	BaseURL      string
@@ -114,6 +114,6 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
-	router.POST(options.BaseURL+"/customer/:customerID/order", wrapper.PostCustomerCustomerIDOrder)
 	router.GET(options.BaseURL+"/customer/:customerID/order/:orderID", wrapper.GetCustomerCustomerIDOrderOrderID)
+	router.POST(options.BaseURL+"/customer/:customerID/orders", wrapper.PostCustomerCustomerIDOrders)
 }

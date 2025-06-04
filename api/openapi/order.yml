@@ -31,12 +31,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Order'
         default:
-          description: 
+          description: API Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /customer/{customerID}/order:
+  /customer/{customerID}/orders:
     post:
       description: Create order by customer ID
       parameters:

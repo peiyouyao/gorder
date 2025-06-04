@@ -37,5 +37,5 @@ type Order struct {
 	Status       *string `json:"status,omitempty"`
 }
 
-// PostCustomerCustomerIDOrderJSONRequestBody defines body for PostCustomerCustomerIDOrder for application/json ContentType.
-type PostCustomerCustomerIDOrderJSONRequestBody = CreateOrderRequest
+// PostCustomerCustomerIDOrdersJSONRequestBody defines body for PostCustomerCustomerIDOrders for application/json ContentType.
+type PostCustomerCustomerIDOrdersJSONRequestBody = CreateOrderRequest
