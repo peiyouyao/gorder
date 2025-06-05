@@ -3,15 +3,13 @@ POST http://127.0.0.1:8282/api/customer/123/orders
 Content-Type: application/json
 
 {
-  "CustomerID": "123",
+  "CustomerID": "fake-customer-id",
   "Items": [
     {"ID": "item-1", "Quantity": 3 },
     {"ID": "item-2", "Quantity": 1 },
-    {"ID": "item-3", "Quantity": 8 },
-    {"ID": "item-4", "Quantity": 1 },
-    {"ID": "item-5", "Quantity": 6 }
+    {"ID": "item-3", "Quantity": 8 }
   ]
 }
 
 ###
-GET http://127.0.0.1:8282/api/customer/123/order/1749113480
+GET http://127.0.0.1:8282/api/customer/fake-customer-id/order/1749144852
