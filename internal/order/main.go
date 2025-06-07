@@ -7,6 +7,7 @@ import (
 	"github.com/PerryYao-GitHub/gorder/common/config"
 	"github.com/PerryYao-GitHub/gorder/common/discovery"
 	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
+	"github.com/PerryYao-GitHub/gorder/common/logging"
 	"github.com/PerryYao-GitHub/gorder/common/server"
 	"github.com/PerryYao-GitHub/gorder/order/ports"
 	"github.com/PerryYao-GitHub/gorder/order/service"
@@ -18,6 +19,7 @@ import (
 
 func init() {
 	if err := config.NewViperConfig(); err != nil {
+		logging.Init()
 		log.Fatal(err)
 	}
 }
