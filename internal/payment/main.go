@@ -5,6 +5,7 @@ import (
 	"github.com/PerryYao-GitHub/gorder/common/config"
 	"github.com/PerryYao-GitHub/gorder/common/logging"
 	"github.com/PerryYao-GitHub/gorder/common/server"
+	"github.com/PerryYao-GitHub/gorder/payment/infrastructure/consumer"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -29,6 +30,8 @@ func main() {
 		_ = ch.Close()
 		_ = closeConn()
 	}()
+
+	go consumer.NewConsumer().Listen(ch)
 
 	paymentHandler := NewPaymentHandler()
 	switch serviceType {
