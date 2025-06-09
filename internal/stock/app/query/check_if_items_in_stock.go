@@ -34,43 +34,27 @@ func NewCheckIfItemsInStockHandler(
 	)
 }
 
+// TODO: del
+var stub = map[string]string{
+	"1": "price_1RXLrqPqGUzmzBMUyWDWprnO",
+	"2": "price_1RY15bPqGUzmzBMU2sfOn6gf",
+	"3": "price_1RY18LPqGUzmzBMUicg0gEVS",
+}
+
 func (c checkIfItemsInStock) Handle(ctx context.Context, query CheckIfItemsInStock) ([]*orderpb.Item, error) {
 	var res []*orderpb.Item
 	for _, i := range query.Items {
+		// TODO: get from db or stripe
+		priceID, ok := stub[i.ID]
+		if !ok {
+			priceID = stub["1"] // default priceID
+		}
+
 		res = append(res, &orderpb.Item{
 			ID:       i.ID,
 			Quantity: i.Quantity,
+			PriceID:  priceID,
 		})
 	}
 	return res, nil
-	// var (
-	// 	ids          []string
-	// 	idToQuantity = make(map[string]int32)
-	// )
-	// for _, q := range query.Items {
-	// 	ids = append(ids, q.ID)
-	// 	idToQuantity[q.ID] = q.Quantity
-	// }
-
-	// itemsInStock, err := c.stockRepo.GetItems(ctx, ids)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// var res []*orderpb.Item
-	// for _, item := range itemsInStock {
-	// 	need, ok := idToQuantity[item.ID]
-	// 	if !ok {
-	// 		continue
-	// 	}
-	// 	if item.Quantity >= need {
-	// 		res = append(res, &orderpb.Item{
-	// 			ID:       item.ID,
-	// 			Name:     item.Name,
-	// 			Quantity: item.Quantity,
-	// 			PriceID:  item.PriceID,
-	// 		})
-	// 	}
-	// }
-	// return res, nil
 }

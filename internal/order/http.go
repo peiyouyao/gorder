@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
@@ -29,9 +30,10 @@ func (H *HTTPServer) PostCustomerCustomerIDOrders(c *gin.Context, customerID str
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"message":     "sucess",
-		"customer_id": req.CustomerID,
-		"order_id":    r.OrderID,
+		"message":      "sucess",
+		"customer_id":  req.CustomerID,
+		"order_id":     r.OrderID,
+		"redirect_url": fmt.Sprintf("http://localhost:8282/success?customerID=%s&orderID=%s", &req.CustomerID, r.OrderID),
 	})
 }
 
@@ -45,7 +47,10 @@ func (H *HTTPServer) GetCustomerCustomerIDOrderOrderID(c *gin.Context, customerI
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
 		"message": "success",
-		"data":    o,
+		"data": gin.H{
+			"Order": o,
+		},
 	})
 }

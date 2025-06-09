@@ -14,29 +14,23 @@ type MemoryStockRepository struct {
 }
 
 var stub = map[string]*orderpb.Item{
-	"item-1": {
-		ID:       "item-1",
-		Name:     "bar-1",
-		Quantity: 10000,
-		PriceID:  "pid-1",
+	"1": {
+		ID:       "1",
+		Name:     "Fires",
+		Quantity: 5000,
+		PriceID:  "price_1RXLrqPqGUzmzBMUyWDWprnO",
 	},
-	"item-2": {
-		ID:       "item-2",
-		Name:     "bar-2",
-		Quantity: 10000,
-		PriceID:  "pid-2",
+	"2": {
+		ID:       "2",
+		Name:     "Cookie",
+		Quantity: 1600,
+		PriceID:  "price_1RY15bPqGUzmzBMU2sfOn6gf",
 	},
-	"item-3": {
-		ID:       "item-3",
-		Name:     "bar-3",
-		Quantity: 10000,
-		PriceID:  "pid-3",
-	},
-	"item-4": {
-		ID:       "item-4",
-		Name:     "bar-4",
-		Quantity: 10000,
-		PriceID:  "pid-4",
+	"3": {
+		ID:       "3",
+		Name:     "AnimeBook",
+		Quantity: 400,
+		PriceID:  "price_1RY18LPqGUzmzBMUicg0gEVS",
 	},
 }
 

@@ -5,9 +5,7 @@ Content-Type: application/json
 {
   "CustomerID": "fake-customer-id",
   "Items": [
-    {"ID": "item-1", "Quantity": 3 },
-    {"ID": "item-2", "Quantity": 1 },
-    {"ID": "item-3", "Quantity": 8 }
+    {"ID": "3", "Quantity": 3 }
   ]
 }
 
