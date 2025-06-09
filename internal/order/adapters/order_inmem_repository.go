@@ -66,11 +66,12 @@ func (m *MemoryOrderRepository) Update(
 	order *domain.Order,
 	updateFn func(context.Context, *domain.Order) (*domain.Order, error),
 ) error {
+
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	for i, o := range m.store {
 		if o.ID == order.ID && o.CustomerID == order.CustomerID {
-			updatedOrder, err := updateFn(ctx, o)
+			updatedOrder, err := updateFn(ctx, order)
 			if err != nil {
 				return err
 			}

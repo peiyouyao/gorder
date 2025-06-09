@@ -1,5 +1,5 @@
 ###
-POST http://127.0.0.1:8282/api/customer/123/orders
+POST http://127.0.0.1:8282/api/customer/fake-customer-id/orders
 Content-Type: application/json
 
 {
