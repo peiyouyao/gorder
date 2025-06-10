@@ -9,7 +9,7 @@ servers:
       hostname:
         default: localhost
 paths:
-  /customer/{customerID}/order/{orderID}:
+  /customer/{customerID}/orders/{orderID}:
     get:
       description: Get order by customer ID and order ID
       parameters:
