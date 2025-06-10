@@ -5,7 +5,7 @@ Content-Type: application/json
 {
   "CustomerID": "111",
   "Items": [
-    {"ID": "3", "Quantity": 3 }
+    {"ID": "1", "Quantity": 8 }
   ]
 }
 

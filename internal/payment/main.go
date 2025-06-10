@@ -23,12 +23,13 @@ func init() {
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	serviceType := viper.GetString("payment.server-to-run")
+
+	serverType := viper.GetString("payment.server-to-run")
 
 	application, cleanup := service.NewApplication(ctx)
 	defer cleanup()
 
-	ch, closeConn := broker.Connect(
+	ch, closeCh := broker.Connect(
 		viper.GetString("rabbitmq.user"),
 		viper.GetString("rabbitmq.password"),
 		viper.GetString("rabbitmq.host"),
@@ -36,13 +37,13 @@ func main() {
 	)
 	defer func() {
 		_ = ch.Close()
-		_ = closeConn()
+		_ = closeCh()
 	}()
 
 	go consumer.NewConsumer(application).Listen(ch)
 
-	paymentHandler := NewPaymentHandler()
-	switch serviceType {
+	paymentHandler := NewPaymentHandler(ch)
+	switch serverType {
 	case "http":
 		server.RunHTTPServer(viper.GetString("payment.service-name"), paymentHandler.RegisterRoutes)
 	case "grpc":
