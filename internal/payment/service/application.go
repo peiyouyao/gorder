@@ -24,13 +24,12 @@ func NewApplication(ctx context.Context) (app.Application, func()) {
 	// memoryProcessor := processor.NewInmemProcess()
 	stripeProcessor := processor.NewStripeProcessor(viper.GetString("stripe-key"))
 
-	return newApplication(ctx, orderGRPC, stripeProcessor), func() {
+	return newApplication(orderGRPC, stripeProcessor), func() {
 		_ = closeOrderClient()
 	}
 }
 
 func newApplication(
-	ctx context.Context,
 	orderGRPC command.OrderService,
 	processor domain.Processor,
 ) app.Application {
