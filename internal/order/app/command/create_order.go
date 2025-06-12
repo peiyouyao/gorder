@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/PerryYao-GitHub/gorder/common/broker"
 	"github.com/PerryYao-GitHub/gorder/common/decorator"
@@ -12,6 +13,7 @@ import (
 	domain "github.com/PerryYao-GitHub/gorder/order/domain/order"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
 )
 
 type CreateOrder struct {
@@ -56,10 +58,20 @@ func NewCreateOrderHandler(
 }
 
 func (c createOrderHandler) Handle(ctx context.Context, cmd CreateOrder) (*CreateOrderResult, error) {
+	q, err := c.channal.QueueDeclare(broker.EventOrderCreated, true, false, false, false, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	t := otel.Tracer("rabbitmq")
+	ctx, span := t.Start(ctx, fmt.Sprintf("rabbitmq.%s.publish", q.Name))
+	defer span.End()
+
 	validItems, err := c.validate(ctx, cmd.Items)
 	if err != nil {
 		return nil, err
 	}
+
 	o, err := c.orderRepo.Create(ctx, &domain.Order{
 		CustomerID: cmd.CustomerID,
 		Items:      validItems,
@@ -68,21 +80,19 @@ func (c createOrderHandler) Handle(ctx context.Context, cmd CreateOrder) (*Creat
 		return nil, err
 	}
 
-	q, err := c.channal.QueueDeclare(broker.EventOrderCreated, true, false, false, false, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	marshaledOrder, err := json.Marshal(o)
 	if err != nil {
 		return nil, err
 	}
-	err = c.channal.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
+
+	headers := broker.InjectRannitMQHeaders(ctx)
+
+	if err = c.channal.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
 		ContentType:  "application/json",
 		DeliveryMode: amqp.Persistent,
 		Body:         marshaledOrder,
-	})
-	if err != nil {
+		Headers:      headers,
+	}); err != nil {
 		return nil, err
 	}
 	return &CreateOrderResult{OrderID: o.ID}, nil
@@ -98,11 +108,6 @@ func (c createOrderHandler) validate(ctx context.Context, items []*orderpb.ItemW
 		return nil, err
 	}
 	return resp.Items, nil
-	// ids := []string{}
-	// for _, item := range items {
-	// 	ids = append(ids, item.ID)
-	// }
-	// return c.stockGRPC.GetItems(ctx, ids)
 }
 
 func packItems(items []*orderpb.ItemWithQuantity) []*orderpb.ItemWithQuantity {

@@ -21,11 +21,15 @@ type createPaymentHandler struct {
 }
 
 func (c createPaymentHandler) Handle(ctx context.Context, cmd CreatePayment) (string, error) {
+	// tr := otel.Tracer("payment")
+	// ctx, span := tr.Start(ctx, "create_payment")
+	// defer span.End()
+
 	link, err := c.processor.CreatePaymentLink(ctx, cmd.Order)
 	if err != nil {
 		return "", err
 	}
-	logrus.Infof("create payment link for order: %s sucess, payment link", cmd.Order.ID, link)
+	logrus.Infof("create payment link for order: %s sucess, payment link: %s", cmd.Order.ID, link)
 	newOrder := &orderpb.Order{
 		ID:          cmd.Order.ID,
 		CustomerID:  cmd.Order.CustomerID,
