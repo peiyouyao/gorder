@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
+	client "github.com/PerryYao-GitHub/gorder/common/client/order"
 	"github.com/PerryYao-GitHub/gorder/common/tracing"
 	"github.com/PerryYao-GitHub/gorder/order/app"
 	"github.com/PerryYao-GitHub/gorder/order/app/command"
 	"github.com/PerryYao-GitHub/gorder/order/app/query"
+	"github.com/PerryYao-GitHub/gorder/order/convertor"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,14 +21,14 @@ func (H *HTTPServer) PostCustomerCustomerIDOrders(c *gin.Context, customerID str
 	ctx, span := tracing.Start(c, "PostCustomerCustomerIDOrders")
 	defer span.End()
 
-	var req orderpb.CreateOrderRequest
+	var req client.CreateOrderRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err})
 		return
 	}
 	r, err := H.app.Commands.CreateOrder.Handle(ctx, command.CreateOrder{
 		CustomerID: req.CustomerID,
-		Items:      req.Items,
+		Items:      convertor.NewItemWithQuantityConvertor().ClientsToEntities(req.Items),
 	})
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"error": err.Error()})

@@ -21,8 +21,8 @@ import (
 )
 
 func init() {
+	logging.Init()
 	if err := config.NewViperConfig(); err != nil {
-		logging.Init()
 		log.Fatal(err)
 	}
 }

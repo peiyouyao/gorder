@@ -32,36 +32,6 @@ func Connect(user, password, host, port string) (*amqp.Channel, func() error) {
 
 type RabbitMQHeaderCarrier map[string]interface{}
 
-/*
-func (r *RabbitMQHeaderCarrier) Get(key string) string {
-	value, ok := (*r)[key]
-	if !ok {
-		return ""
-	}
-	return value.(string)
-}
-
-func (r *RabbitMQHeaderCarrier) Set(key, value string) {
-	(*r)[key] = value
-}
-
-func (r *RabbitMQHeaderCarrier) Keys() []string {
-	keys := make([]string, len(*r))
-	i := 0
-	for key := range *r {
-		keys[i] = key
-		i++
-	}
-	return keys
-}
-
-func InjectRannitMQHeaders(ctx context.Context) map[string]interface{} {
-	carrier := make(RabbitMQHeaderCarrier)
-	otel.GetTextMapPropagator().Inject(ctx, &carrier)
-	return carrier
-}
-*/
-
 func (r RabbitMQHeaderCarrier) Get(key string) string {
 	value, ok := r[key]
 	if !ok {
@@ -84,7 +54,7 @@ func (r RabbitMQHeaderCarrier) Keys() []string {
 	return keys
 }
 
-func InjectRannitMQHeaders(ctx context.Context) map[string]interface{} {
+func InjectRabbitMQHeaders(ctx context.Context) map[string]interface{} {
 	carrier := make(RabbitMQHeaderCarrier)
 	otel.GetTextMapPropagator().Inject(ctx, carrier)
 	return carrier

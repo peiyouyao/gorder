@@ -8,9 +8,10 @@ import (
 
 	"github.com/PerryYao-GitHub/gorder/common/broker"
 	"github.com/PerryYao-GitHub/gorder/common/decorator"
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
 	"github.com/PerryYao-GitHub/gorder/order/app/query"
+	"github.com/PerryYao-GitHub/gorder/order/convertor"
 	domain "github.com/PerryYao-GitHub/gorder/order/domain/order"
+	"github.com/PerryYao-GitHub/gorder/order/entity"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
@@ -18,7 +19,7 @@ import (
 
 type CreateOrder struct {
 	CustomerID string
-	Items      []*orderpb.ItemWithQuantity
+	Items      []*entity.ItemWithQuantity
 }
 
 type CreateOrderResult struct {
@@ -30,35 +31,38 @@ type CreateOrderHandler decorator.CommandHandler[CreateOrder, *CreateOrderResult
 type createOrderHandler struct {
 	orderRepo domain.Repository
 	stockGRPC query.StockService
-	channal   *amqp.Channel
+	channel   *amqp.Channel
 }
 
 func NewCreateOrderHandler(
 	orderRepo domain.Repository,
 	stockGRPC query.StockService,
-	channal *amqp.Channel,
+	channel *amqp.Channel,
 	logger *logrus.Entry,
-	metricsClient decorator.MetricsClient,
+	metricClient decorator.MetricsClient,
 ) CreateOrderHandler {
 	if orderRepo == nil {
 		panic("nil orderRepo")
 	}
-	if channal == nil {
-		panic("nil channel")
+	if stockGRPC == nil {
+		panic("nil stockGRPC")
+	}
+	if channel == nil {
+		panic("nil channel ")
 	}
 	return decorator.ApplyCommandDecorators[CreateOrder, *CreateOrderResult](
 		createOrderHandler{
 			orderRepo: orderRepo,
 			stockGRPC: stockGRPC,
-			channal:   channal,
+			channel:   channel,
 		},
 		logger,
-		metricsClient,
+		metricClient,
 	)
 }
 
 func (c createOrderHandler) Handle(ctx context.Context, cmd CreateOrder) (*CreateOrderResult, error) {
-	q, err := c.channal.QueueDeclare(broker.EventOrderCreated, true, false, false, false, nil)
+	q, err := c.channel.QueueDeclare(broker.EventOrderCreated, true, false, false, false, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +75,6 @@ func (c createOrderHandler) Handle(ctx context.Context, cmd CreateOrder) (*Creat
 	if err != nil {
 		return nil, err
 	}
-
 	o, err := c.orderRepo.Create(ctx, &domain.Order{
 		CustomerID: cmd.CustomerID,
 		Items:      validItems,
@@ -80,44 +83,44 @@ func (c createOrderHandler) Handle(ctx context.Context, cmd CreateOrder) (*Creat
 		return nil, err
 	}
 
-	marshaledOrder, err := json.Marshal(o)
+	marshalledOrder, err := json.Marshal(o)
+	if err != nil {
+		return nil, err
+	}
+	header := broker.InjectRabbitMQHeaders(ctx)
+	err = c.channel.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
+		ContentType:  "application/json",
+		DeliveryMode: amqp.Persistent,
+		Body:         marshalledOrder,
+		Headers:      header,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	headers := broker.InjectRannitMQHeaders(ctx)
-
-	if err = c.channal.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
-		ContentType:  "application/json",
-		DeliveryMode: amqp.Persistent,
-		Body:         marshaledOrder,
-		Headers:      headers,
-	}); err != nil {
-		return nil, err
-	}
 	return &CreateOrderResult{OrderID: o.ID}, nil
 }
 
-func (c createOrderHandler) validate(ctx context.Context, items []*orderpb.ItemWithQuantity) ([]*orderpb.Item, error) {
+func (c createOrderHandler) validate(ctx context.Context, items []*entity.ItemWithQuantity) ([]*entity.Item, error) {
 	if len(items) == 0 {
 		return nil, errors.New("must have at least one item")
 	}
 	items = packItems(items)
-	resp, err := c.stockGRPC.CheckIfItemsInStock(ctx, items)
+	resp, err := c.stockGRPC.CheckIfItemsInStock(ctx, convertor.NewItemWithQuantityConvertor().EntitiesToProtos(items))
 	if err != nil {
 		return nil, err
 	}
-	return resp.Items, nil
+	return convertor.NewItemConvertor().ProtosToEntities(resp.Items), nil
 }
 
-func packItems(items []*orderpb.ItemWithQuantity) []*orderpb.ItemWithQuantity {
-	merged := map[string]int32{}
+func packItems(items []*entity.ItemWithQuantity) []*entity.ItemWithQuantity {
+	merged := make(map[string]int32)
 	for _, item := range items {
 		merged[item.ID] += item.Quantity
 	}
-	res := []*orderpb.ItemWithQuantity{}
+	var res []*entity.ItemWithQuantity
 	for id, quantity := range merged {
-		res = append(res, &orderpb.ItemWithQuantity{
+		res = append(res, &entity.ItemWithQuantity{
 			ID:       id,
 			Quantity: quantity,
 		})

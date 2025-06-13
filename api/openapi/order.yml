@@ -70,6 +70,12 @@ components:
   schemas:
     Order:
       type: object
+      required:
+        - id
+        - customerID
+        - status
+        - items
+        - paymentLink
       properties:
         id: 
           type: string
@@ -81,10 +87,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Item'
-        paymentLinkd:
+        paymentLink:
           type: string
     Item:
       type: object
+      required:
+        - id
+        - name
+        - quantity
+        - priceID
       properties:
         id:
           type: string
@@ -109,6 +120,9 @@ components:
             $ref: '#/components/schemas/ItemWithQuantity'
     ItemWithQuantity:
       type: object
+      required:
+       - id
+       - quantity
       properties:
         id:
           type: string
