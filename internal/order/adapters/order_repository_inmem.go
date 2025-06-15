@@ -10,21 +10,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type MemoryOrderRepository struct {
+type OrderRepositoryInmem struct {
 	lock  *sync.RWMutex
 	store []*domain.Order
 }
 
-func NewMemoryOrderRepository() *MemoryOrderRepository {
+func NewOrderRepositoryInmem() *OrderRepositoryInmem {
 	s := make([]*domain.Order, 0)
-	return &MemoryOrderRepository{
+	return &OrderRepositoryInmem{
 		lock:  &sync.RWMutex{},
 		store: s,
 	}
 }
 
 // impl domain.Repository
-func (m *MemoryOrderRepository) Create(_ context.Context, order *domain.Order) (*domain.Order, error) {
+func (m *OrderRepositoryInmem) Create(_ context.Context, order *domain.Order) (*domain.Order, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	res := &domain.Order{
@@ -42,7 +42,7 @@ func (m *MemoryOrderRepository) Create(_ context.Context, order *domain.Order) (
 	return res, nil
 }
 
-func (m *MemoryOrderRepository) Get(ctx context.Context, id, customerID string) (*domain.Order, error) {
+func (m *OrderRepositoryInmem) Get(ctx context.Context, id, customerID string) (*domain.Order, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	for _, o := range m.store {
@@ -54,7 +54,7 @@ func (m *MemoryOrderRepository) Get(ctx context.Context, id, customerID string) 
 	return nil, domain.NotFoundError{OrderID: id}
 }
 
-func (m *MemoryOrderRepository) Update(
+func (m *OrderRepositoryInmem) Update(
 	ctx context.Context,
 	order *domain.Order,
 	updateFn func(context.Context, *domain.Order) (*domain.Order, error),

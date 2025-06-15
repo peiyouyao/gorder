@@ -5,9 +5,9 @@ Content-Type: application/json
 {
   "customer_id": "111",
   "items": [
-    {"id": "1", "quantity": 8 }
+    {"id": "1", "quantity": 1 }
   ]
 }
 
 ###
-GET http://127.0.0.1:8282/api/customer/111/orders/1749964085
+GET http://127.0.0.1:8282/api/customer/111/orders/684efca3f0dceb142a044e03
