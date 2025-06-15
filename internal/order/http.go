@@ -3,14 +3,14 @@ package main
 import (
 	"fmt"
 
-	client "github.com/PerryYao-GitHub/gorder/common/client/order"
-	common "github.com/PerryYao-GitHub/gorder/common/response"
-	"github.com/PerryYao-GitHub/gorder/order/app"
-	"github.com/PerryYao-GitHub/gorder/order/app/command"
-	"github.com/PerryYao-GitHub/gorder/order/app/dto"
-	"github.com/PerryYao-GitHub/gorder/order/app/query"
-	"github.com/PerryYao-GitHub/gorder/order/convertor"
 	"github.com/gin-gonic/gin"
+	client "github.com/peiyouyao/gorder/common/client/order"
+	common "github.com/peiyouyao/gorder/common/response"
+	"github.com/peiyouyao/gorder/order/app"
+	"github.com/peiyouyao/gorder/order/app/command"
+	"github.com/peiyouyao/gorder/order/app/dto"
+	"github.com/peiyouyao/gorder/order/app/query"
+	"github.com/peiyouyao/gorder/order/convertor"
 )
 
 type HTTPServer struct {

@@ -3,9 +3,9 @@ package query
 import (
 	"context"
 
-	"github.com/PerryYao-GitHub/gorder/common/decorator"
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
-	domain "github.com/PerryYao-GitHub/gorder/stock/domain/stock"
+	"github.com/peiyouyao/gorder/common/decorator"
+	"github.com/peiyouyao/gorder/common/genproto/orderpb"
+	domain "github.com/peiyouyao/gorder/stock/domain/stock"
 	"github.com/sirupsen/logrus"
 )
 

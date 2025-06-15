@@ -1,10 +1,10 @@
 package convertor
 
 import (
-	client "github.com/PerryYao-GitHub/gorder/common/client/order"
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
-	domain "github.com/PerryYao-GitHub/gorder/order/domain/order"
-	"github.com/PerryYao-GitHub/gorder/order/entity"
+	client "github.com/peiyouyao/gorder/common/client/order"
+	"github.com/peiyouyao/gorder/common/genproto/orderpb"
+	domain "github.com/peiyouyao/gorder/order/domain/order"
+	"github.com/peiyouyao/gorder/order/entity"
 )
 
 type OrderConvertor struct{}

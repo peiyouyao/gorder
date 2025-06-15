@@ -3,7 +3,7 @@ package command
 import (
 	"context"
 
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
+	"github.com/peiyouyao/gorder/common/genproto/orderpb"
 )
 
 type OrderService interface {

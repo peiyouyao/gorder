@@ -1,6 +1,6 @@
 package app
 
-import "github.com/PerryYao-GitHub/gorder/stock/app/query"
+import "github.com/peiyouyao/gorder/stock/app/query"
 
 type Application struct {
 	Commands Commands

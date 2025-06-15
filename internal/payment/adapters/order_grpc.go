@@ -3,8 +3,8 @@ package adapters
 import (
 	"context"
 
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
-	"github.com/PerryYao-GitHub/gorder/common/tracing"
+	"github.com/peiyouyao/gorder/common/genproto/orderpb"
+	"github.com/peiyouyao/gorder/common/tracing"
 	"github.com/sirupsen/logrus"
 )
 

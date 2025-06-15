@@ -7,10 +7,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/PerryYao-GitHub/gorder/common/broker"
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
-	"github.com/PerryYao-GitHub/gorder/payment/domain"
 	"github.com/gin-gonic/gin"
+	"github.com/peiyouyao/gorder/common/broker"
+	"github.com/peiyouyao/gorder/common/genproto/orderpb"
+	"github.com/peiyouyao/gorder/payment/domain"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"

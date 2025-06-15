@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/PerryYao-GitHub/gorder/common/discovery/consul"
+	"github.com/peiyouyao/gorder/common/discovery/consul"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )

@@ -3,8 +3,8 @@ package grpc
 import (
 	"context"
 
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
-	"github.com/PerryYao-GitHub/gorder/common/genproto/stockpb"
+	"github.com/peiyouyao/gorder/common/genproto/orderpb"
+	"github.com/peiyouyao/gorder/common/genproto/stockpb"
 	"github.com/sirupsen/logrus"
 )
 

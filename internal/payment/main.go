@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 
-	"github.com/PerryYao-GitHub/gorder/common/broker"
-	_ "github.com/PerryYao-GitHub/gorder/common/config"
-	"github.com/PerryYao-GitHub/gorder/common/logging"
-	"github.com/PerryYao-GitHub/gorder/common/server"
-	"github.com/PerryYao-GitHub/gorder/common/tracing"
-	"github.com/PerryYao-GitHub/gorder/payment/infrastructure/consumer"
-	"github.com/PerryYao-GitHub/gorder/payment/service"
+	"github.com/peiyouyao/gorder/common/broker"
+	_ "github.com/peiyouyao/gorder/common/config"
+	"github.com/peiyouyao/gorder/common/logging"
+	"github.com/peiyouyao/gorder/common/server"
+	"github.com/peiyouyao/gorder/common/tracing"
+	"github.com/peiyouyao/gorder/payment/infrastructure/consumer"
+	"github.com/peiyouyao/gorder/payment/service"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )

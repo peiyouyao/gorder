@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	_ "github.com/PerryYao-GitHub/gorder/common/config"
-	domain "github.com/PerryYao-GitHub/gorder/order/domain/order"
-	"github.com/PerryYao-GitHub/gorder/order/entity"
+	_ "github.com/peiyouyao/gorder/common/config"
+	domain "github.com/peiyouyao/gorder/order/domain/order"
+	"github.com/peiyouyao/gorder/order/entity"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"

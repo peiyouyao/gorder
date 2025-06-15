@@ -1,6 +1,6 @@
 package app
 
-import "github.com/PerryYao-GitHub/gorder/payment/app/command"
+import "github.com/peiyouyao/gorder/payment/app/command"
 
 type Application struct {
 	Commands Commands

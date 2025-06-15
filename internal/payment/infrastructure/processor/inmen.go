@@ -3,7 +3,7 @@ package processor
 import (
 	"context"
 
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
+	"github.com/peiyouyao/gorder/common/genproto/orderpb"
 )
 
 // stub

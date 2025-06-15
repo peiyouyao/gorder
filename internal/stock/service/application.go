@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	"github.com/PerryYao-GitHub/gorder/common/metrics"
+	"github.com/peiyouyao/gorder/common/metrics"
 
-	"github.com/PerryYao-GitHub/gorder/stock/adapters"
-	"github.com/PerryYao-GitHub/gorder/stock/app"
-	"github.com/PerryYao-GitHub/gorder/stock/app/query"
+	"github.com/peiyouyao/gorder/stock/adapters"
+	"github.com/peiyouyao/gorder/stock/app"
+	"github.com/peiyouyao/gorder/stock/app/query"
 	"github.com/sirupsen/logrus"
 )
 

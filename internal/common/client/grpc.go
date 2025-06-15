@@ -6,9 +6,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/PerryYao-GitHub/gorder/common/discovery"
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
-	"github.com/PerryYao-GitHub/gorder/common/genproto/stockpb"
+	"github.com/peiyouyao/gorder/common/discovery"
+	"github.com/peiyouyao/gorder/common/genproto/orderpb"
+	"github.com/peiyouyao/gorder/common/genproto/stockpb"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"

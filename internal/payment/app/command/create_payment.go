@@ -3,9 +3,9 @@ package command
 import (
 	"context"
 
-	"github.com/PerryYao-GitHub/gorder/common/decorator"
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
-	"github.com/PerryYao-GitHub/gorder/payment/domain"
+	"github.com/peiyouyao/gorder/common/decorator"
+	"github.com/peiyouyao/gorder/common/genproto/orderpb"
+	"github.com/peiyouyao/gorder/payment/domain"
 	"github.com/sirupsen/logrus"
 )
 

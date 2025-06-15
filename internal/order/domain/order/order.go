@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/PerryYao-GitHub/gorder/order/entity"
+	"github.com/peiyouyao/gorder/order/entity"
 	"github.com/stripe/stripe-go/v82"
 )
 

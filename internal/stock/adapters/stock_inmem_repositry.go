@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/PerryYao-GitHub/gorder/common/genproto/orderpb"
-	domain "github.com/PerryYao-GitHub/gorder/stock/domain/stock"
+	"github.com/peiyouyao/gorder/common/genproto/orderpb"
+	domain "github.com/peiyouyao/gorder/stock/domain/stock"
 )
 
 type MemoryStockRepository struct {

@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/PerryYao-GitHub/gorder/order/app/command"
-	"github.com/PerryYao-GitHub/gorder/order/app/query"
+	"github.com/peiyouyao/gorder/order/app/command"
+	"github.com/peiyouyao/gorder/order/app/query"
 )
 
 type Application struct {

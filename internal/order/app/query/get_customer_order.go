@@ -3,8 +3,8 @@ package query
 import (
 	"context"
 
-	"github.com/PerryYao-GitHub/gorder/common/decorator"
-	domain "github.com/PerryYao-GitHub/gorder/order/domain/order"
+	"github.com/peiyouyao/gorder/common/decorator"
+	domain "github.com/peiyouyao/gorder/order/domain/order"
 	"github.com/sirupsen/logrus"
 )
 

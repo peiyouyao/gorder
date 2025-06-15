@@ -3,10 +3,10 @@ package ports
 import (
 	context "context"
 
-	"github.com/PerryYao-GitHub/gorder/common/genproto/stockpb"
-	"github.com/PerryYao-GitHub/gorder/common/tracing"
-	"github.com/PerryYao-GitHub/gorder/stock/app"
-	"github.com/PerryYao-GitHub/gorder/stock/app/query"
+	"github.com/peiyouyao/gorder/common/genproto/stockpb"
+	"github.com/peiyouyao/gorder/common/tracing"
+	"github.com/peiyouyao/gorder/stock/app"
+	"github.com/peiyouyao/gorder/stock/app/query"
 )
 
 type GRPCServer struct {
