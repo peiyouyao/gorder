@@ -1,70 +1,78 @@
+
 openapi: 3.0.3
 info:
   title: order service
   description: order service
   version: 1.0.0
 servers:
-  - url: 'http://{hostname}/api'
+  - url: 'https://{hostname}/api'
     variables:
       hostname:
-        default: localhost
+        default: 127.0.0.1
+
 paths:
-  /customer/{customerID}/orders/{orderID}:
+  /customer/{customer_id}/orders/{order_id}:
     get:
-      description: Get order by customer ID and order ID
+      description: "get order"
       parameters:
-        - name: customerID
-          in: path
-          required: true
+        - in: path
+          name: customer_id
           schema:
             type: string
-        - name: orderID
-          in: path
           required: true
+
+        - in: path
+          name: order_id
           schema:
             type: string
+          required: true
+
       responses:
         '200':
-          description: Order found
+          description: todo
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Order'
+
         default:
-          description: API Error
+          description: todo
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /customer/{customerID}/orders:
+
+  /customer/{customer_id}/orders:
     post:
-      description: Create order by customer ID
+      description: "create order"
       parameters:
-        - name: customerID
-          in: path
-          required: true
+        - in: path
+          name: customer_id
           schema:
             type: string
+          required: true
+
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateOrderRequest'
+
       responses:
         '200':
-          description: Order found
+          description: todo
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Order'
+
         default:
-          description: 
+          description: todo
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
 
 components:
   schemas:
@@ -72,14 +80,14 @@ components:
       type: object
       required:
         - id
-        - customerID
+        - customer_id
         - status
         - items
-        - paymentLink
+        - payment_link
       properties:
-        id: 
+        id:
           type: string
-        customerID:
+        customer_id:
           type: string
         status:
           type: string
@@ -87,15 +95,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Item'
-        paymentLink:
+        payment_link:
           type: string
+
     Item:
       type: object
       required:
         - id
         - name
         - quantity
-        - priceID
+        - price_id
       properties:
         id:
           type: string
@@ -104,34 +113,36 @@ components:
         quantity:
           type: integer
           format: int32
-        priceID:
+        price_id:
           type: string
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+
     CreateOrderRequest:
       type: object
       required:
-        - customerID
+        - customer_id
         - items
       properties:
-        customerID:
+        customer_id:
           type: string
         items:
           type: array
           items:
             $ref: '#/components/schemas/ItemWithQuantity'
+
     ItemWithQuantity:
       type: object
       required:
-       - id
-       - quantity
+        - id
+        - quantity
       properties:
         id:
           type: string
         quantity:
           type: integer
           format: int32
-    Error:
-      type: object
-      properties:
-        message:
-          type: string
-    

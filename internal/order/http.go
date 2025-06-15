@@ -7,6 +7,7 @@ import (
 	common "github.com/PerryYao-GitHub/gorder/common/response"
 	"github.com/PerryYao-GitHub/gorder/order/app"
 	"github.com/PerryYao-GitHub/gorder/order/app/command"
+	"github.com/PerryYao-GitHub/gorder/order/app/dto"
 	"github.com/PerryYao-GitHub/gorder/order/app/query"
 	"github.com/PerryYao-GitHub/gorder/order/convertor"
 	"github.com/gin-gonic/gin"
@@ -17,15 +18,11 @@ type HTTPServer struct {
 	app app.Application
 }
 
-func (H *HTTPServer) PostCustomerCustomerIDOrders(c *gin.Context, customerID string) {
+func (H *HTTPServer) PostCustomerCustomerIdOrders(c *gin.Context, customerID string) {
 	var (
 		req  client.CreateOrderRequest
 		err  error
-		resp struct {
-			CustomerID  string `json:"customer_id"`
-			OrderID     string `json:"order_id"`
-			RedirectURL string `json:"redirect_url"`
-		}
+		resp dto.CreateOrderResponse
 	)
 	defer func() {
 		H.Response(c, err, &resp)
@@ -35,19 +32,19 @@ func (H *HTTPServer) PostCustomerCustomerIDOrders(c *gin.Context, customerID str
 		return
 	}
 	r, err := H.app.Commands.CreateOrder.Handle(c.Request.Context(), command.CreateOrder{
-		CustomerID: req.CustomerID,
+		CustomerID: req.CustomerId,
 		Items:      convertor.NewItemWithQuantityConvertor().ClientsToEntities(req.Items),
 	})
 	if err != nil {
 		return
 	}
 
-	resp.CustomerID = req.CustomerID
+	resp.CustomerID = req.CustomerId
 	resp.OrderID = r.OrderID
-	resp.RedirectURL = fmt.Sprintf("http://localhost:8282/success?customerID=%s&orderID=%s", req.CustomerID, r.OrderID)
+	resp.RedirectURL = fmt.Sprintf("http://localhost:8282/success?customerID=%s&orderID=%s", req.CustomerId, r.OrderID)
 }
 
-func (H *HTTPServer) GetCustomerCustomerIDOrdersOrderID(c *gin.Context, customerID string, orderID string) {
+func (H *HTTPServer) GetCustomerCustomerIdOrdersOrderId(c *gin.Context, customerID string, orderID string) {
 	var (
 		err  error
 		resp struct {
