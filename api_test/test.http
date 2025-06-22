@@ -5,7 +5,7 @@ Content-Type: application/json
 {
   "customer_id": "111",
   "items": [
-    {"id": "1", "quantity": 1 }
+    {"id": "prod_SSwz4STCQmCbUn", "quantity": 1 }
   ]
 }
 

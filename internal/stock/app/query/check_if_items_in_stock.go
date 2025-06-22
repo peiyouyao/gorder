@@ -4,53 +4,52 @@ import (
 	"context"
 
 	"github.com/peiyouyao/gorder/common/decorator"
-	"github.com/peiyouyao/gorder/common/genproto/orderpb"
 	domain "github.com/peiyouyao/gorder/stock/domain/stock"
+	"github.com/peiyouyao/gorder/stock/entity"
+	"github.com/peiyouyao/gorder/stock/infrastructure/intergration"
 	"github.com/sirupsen/logrus"
 )
 
 type CheckIfItemsInStock struct {
-	Items []*orderpb.ItemWithQuantity
+	Items []*entity.ItemWithQuantity
 }
 
-type CheckIfItemsInStockHandler decorator.QueryHandler[CheckIfItemsInStock, []*orderpb.Item]
+type CheckIfItemsInStockHandler decorator.QueryHandler[CheckIfItemsInStock, []*entity.Item]
 
 type checkIfItemsInStock struct {
 	stockRepo domain.Repository
+	stripeAPI *intergration.StripeAPI
 }
 
 func NewCheckIfItemsInStockHandler(
 	stockRepo domain.Repository,
+	stripeAPI *intergration.StripeAPI,
 	logger *logrus.Entry,
 	metricsClient decorator.MetricsClient,
 ) CheckIfItemsInStockHandler {
 	if stockRepo == nil {
 		panic("nil stockRepo")
 	}
-	return decorator.ApplyQueryDecorators[CheckIfItemsInStock, []*orderpb.Item](
-		checkIfItemsInStock{stockRepo: stockRepo},
+	if stripeAPI == nil {
+		panic("nil stripeAPI")
+	}
+	return decorator.ApplyQueryDecorators[CheckIfItemsInStock, []*entity.Item](
+		checkIfItemsInStock{stockRepo: stockRepo, stripeAPI: stripeAPI},
 		logger,
 		metricsClient,
 	)
 }
 
-// TODO: del
-var stub = map[string]string{
-	"1": "price_1RXLrqPqGUzmzBMUyWDWprnO",
-	"2": "price_1RY15bPqGUzmzBMU2sfOn6gf",
-	"3": "price_1RY18LPqGUzmzBMUicg0gEVS",
-}
-
-func (c checkIfItemsInStock) Handle(ctx context.Context, query CheckIfItemsInStock) ([]*orderpb.Item, error) {
-	var res []*orderpb.Item
+func (c checkIfItemsInStock) Handle(ctx context.Context, query CheckIfItemsInStock) ([]*entity.Item, error) {
+	var res []*entity.Item
 	for _, i := range query.Items {
-		// TODO: get from db or stripe
-		priceID, ok := stub[i.ID]
-		if !ok {
-			priceID = stub["1"] // default priceID
+		priceID, err := c.stripeAPI.GetPriceByProductID(ctx, i.ID)
+		if err != nil {
+			logrus.Warnf("GetPriceByProductID error, item ID = %s, err = %v", i.ID, err)
+			continue
 		}
 
-		res = append(res, &orderpb.Item{
+		res = append(res, &entity.Item{
 			ID:       i.ID,
 			Quantity: i.Quantity,
 			PriceID:  priceID,

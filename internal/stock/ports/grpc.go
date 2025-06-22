@@ -7,6 +7,7 @@ import (
 	"github.com/peiyouyao/gorder/common/tracing"
 	"github.com/peiyouyao/gorder/stock/app"
 	"github.com/peiyouyao/gorder/stock/app/query"
+	"github.com/peiyouyao/gorder/stock/convertor"
 )
 
 type GRPCServer struct {
@@ -33,12 +34,13 @@ func (G GRPCServer) CheckIfItemsInStock(ctx context.Context, request *stockpb.Ch
 	_, span := tracing.Start(ctx, "CheckIfItemsInStock")
 	defer span.End()
 
-	items, err := G.app.Queries.CheckIfItemsInStock.Handle(ctx, query.CheckIfItemsInStock{Items: request.Items})
+	items, err := G.app.Queries.CheckIfItemsInStock.Handle(ctx, query.CheckIfItemsInStock{
+		Items: convertor.NewItemWithQuantityConvertor().ProtosToEntities(request.Items)})
 	if err != nil {
 		return nil, err
 	}
 	return &stockpb.CheckIfItemsInStockResponse{
 		InStock: 1,
-		Items:   items,
+		Items:   convertor.NewItemConvertor().EntitiesToProtos(items),
 	}, nil
 }
