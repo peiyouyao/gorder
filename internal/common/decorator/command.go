@@ -15,9 +15,9 @@ func ApplyCommandDecorators[C, R any](
 	logger *logrus.Entry,
 	metricsClient MetricsClient,
 ) CommandHandler[C, R] {
-	return queryLoggingDecorator[C, R]{
+	return commandLoggingDecorator[C, R]{
 		logger: logger,
-		base: queryMetricsDecorator[C, R]{
+		base: commandMetricsDecorator[C, R]{
 			base:   handler,
 			client: metricsClient,
 		},
