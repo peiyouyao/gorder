@@ -2,6 +2,7 @@ package intergration
 
 import (
 	"context"
+	"fmt"
 
 	_ "github.com/peiyouyao/gorder/common/logging"
 	"github.com/sirupsen/logrus"
@@ -28,5 +29,8 @@ func (s *StripeAPI) GetPriceByProductID(ctx context.Context, pid string) (string
 	if err != nil {
 		return "", err
 	}
-	return result.DefaultPrice.ID, err
+	if result.DefaultPrice == nil {
+		return "", fmt.Errorf("default price not found for product %s", pid)
+	}
+	return result.DefaultPrice.ID, nil
 }

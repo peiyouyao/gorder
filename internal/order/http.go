@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -29,6 +30,10 @@ func (H *HTTPServer) PostCustomerCustomerIdOrders(c *gin.Context, customerID str
 	}()
 
 	if err = c.ShouldBind(&req); err != nil {
+		return
+	}
+	if !H.validate(&req) {
+		err = errors.New("negative quantity")
 		return
 	}
 	r, err := H.app.Commands.CreateOrder.Handle(c.Request.Context(), command.CreateOrder{
@@ -63,4 +68,13 @@ func (H *HTTPServer) GetCustomerCustomerIdOrdersOrderId(c *gin.Context, customer
 		return
 	}
 	resp.Order = convertor.NewOrderConvertor().EntityToClient(o)
+}
+
+func (H *HTTPServer) validate(req *client.CreateOrderRequest) bool {
+	for _, iq := range req.Items {
+		if iq.Quantity <= 0 {
+			return false
+		}
+	}
+	return true
 }

@@ -44,31 +44,31 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://root:password@order-mongo:27017/
       ME_CONFIG_BASICAUTH: false
 
-  prometheus:
-    image: prom/prometheus
-    volumes:
-      - ./prometheus/:/etc/prometheus/
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-    ports:
-      - "9090:9090"
+  # prometheus:
+  #   image: prom/prometheus
+  #   volumes:
+  #     - ./prometheus/:/etc/prometheus/
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+  #     - '--web.console.templates=/usr/share/prometheus/consoles'
+  #   ports:
+  #     - "9090:9090"
 
-  grafana:
-    image: grafana/grafana
-    ports:
-      - "3000:3000"
+  # grafana:
+  #   image: grafana/grafana
+  #   ports:
+  #     - "3000:3000"
 
-  redis:
-    image: redis:latest
-    restart: on-failure
-    ports:
-      - "6379:6379"
-    volumes:
-      - ./data/redis_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
+  # redis:
+  #   image: redis:latest
+  #   restart: on-failure
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - ./data/redis_data:/data
+  #     - ./redis.conf:/usr/local/etc/redis/redis.conf
 
   mysql:
     image: mysql

@@ -16,7 +16,7 @@ type CheckIfItemsInStock struct {
 
 type CheckIfItemsInStockHandler decorator.QueryHandler[CheckIfItemsInStock, []*entity.Item]
 
-type checkIfItemsInStock struct {
+type checkIfItemsInStockHandler struct {
 	stockRepo domain.Repository
 	stripeAPI *intergration.StripeAPI
 }
@@ -34,13 +34,17 @@ func NewCheckIfItemsInStockHandler(
 		panic("nil stripeAPI")
 	}
 	return decorator.ApplyQueryDecorators[CheckIfItemsInStock, []*entity.Item](
-		checkIfItemsInStock{stockRepo: stockRepo, stripeAPI: stripeAPI},
+		checkIfItemsInStockHandler{stockRepo: stockRepo, stripeAPI: stripeAPI},
 		logger,
 		metricsClient,
 	)
 }
 
-func (c checkIfItemsInStock) Handle(ctx context.Context, query CheckIfItemsInStock) ([]*entity.Item, error) {
+func (c checkIfItemsInStockHandler) Handle(ctx context.Context, query CheckIfItemsInStock) ([]*entity.Item, error) {
+	if err := c.checkStock(ctx, query.Items); err != nil {
+		return nil, err
+	}
+
 	var res []*entity.Item
 	for _, i := range query.Items {
 		priceID, err := c.stripeAPI.GetPriceByProductID(ctx, i.ID)
@@ -56,4 +60,42 @@ func (c checkIfItemsInStock) Handle(ctx context.Context, query CheckIfItemsInSto
 		})
 	}
 	return res, nil
+}
+
+func (c checkIfItemsInStockHandler) checkStock(ctx context.Context, items []*entity.ItemWithQuantity) error {
+	var ids []string
+	for _, i := range items {
+		ids = append(ids, i.ID)
+	}
+	records, err := c.stockRepo.GetStock(ctx, ids)
+	if err != nil {
+		return err
+	}
+	idQuantityMap := make(map[string]int32)
+	for _, r := range records {
+		idQuantityMap[r.ID] += r.Quantity
+	}
+
+	var (
+		ok       = true
+		failedOn []struct {
+			ID   string
+			Want int32
+			Have int32
+		}
+	)
+	for _, item := range items {
+		if item.Quantity > idQuantityMap[item.ID] {
+			ok = false
+			failedOn = append(failedOn, struct {
+				ID   string
+				Want int32
+				Have int32
+			}{ID: item.ID, Want: item.Quantity, Have: idQuantityMap[item.ID]})
+		}
+	}
+	if ok {
+		return nil
+	}
+	return domain.ExceedStockError{FailedOn: failedOn}
 }
