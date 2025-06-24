@@ -63,7 +63,7 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 
 	ctx := broker.ExtractRabbitMQHeaders(context.Background(), msg.Headers)
 	tr := otel.Tracer("rabbitmq")
-	_, span := tr.Start(ctx, fmt.Sprintf("rabbitmq.%s.consume", q.Name))
+	mqCtx, span := tr.Start(ctx, fmt.Sprintf("rabbitmq.%s.consume", q.Name))
 
 	var err error
 	defer func() {
@@ -85,14 +85,14 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 	}
 	cook(o)
 	span.AddEvent(fmt.Sprintf("order_cooked: %v", o))
-	if err := c.orderGRPC.UpdateOrder(ctx, &orderpb.Order{
+	if err := c.orderGRPC.UpdateOrder(mqCtx, &orderpb.Order{
 		ID:          o.ID,
 		CustomerID:  o.Status,
 		Status:      "ready",
 		Items:       o.Items,
 		PaymentLink: o.PaymentLink,
 	}); err != nil {
-		if err = broker.HandleRetry(ctx, ch, &msg); err != nil {
+		if err = broker.HandleRetry(mqCtx, ch, &msg); err != nil {
 			logrus.Warnf("kitchen: error handling retry: err = %v", err)
 		}
 		return
