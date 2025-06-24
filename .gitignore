@@ -94,3 +94,5 @@ test-results/
 junit-report/
 lcov-report/
 /dump.rdb
+
+data/
