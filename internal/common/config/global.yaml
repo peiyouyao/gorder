@@ -44,6 +44,16 @@ mongo:
   db-name: "order"
   coll-name: "order"
 
+redis:
+  local:
+    ip: 127.0.0.1
+    port: 6379
+    pool-size: 10
+    max-conn: 100
+    conn-timeout: 1000
+    read-timeout: 1000
+    write-timeout: 100
+
 mysql:
   user: root
   password: root
