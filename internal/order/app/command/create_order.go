@@ -3,7 +3,6 @@ package command
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/peiyouyao/gorder/common/broker"
@@ -12,6 +11,7 @@ import (
 	"github.com/peiyouyao/gorder/order/convertor"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
 	"github.com/peiyouyao/gorder/order/entity"
+	"github.com/pkg/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
@@ -98,7 +98,7 @@ func (c createOrderHandler) Handle(ctx context.Context, cmd CreateOrder) (*Creat
 		Headers:      header,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to publish order created event")
 	}
 
 	return &CreateOrderResult{OrderID: o.ID}, nil

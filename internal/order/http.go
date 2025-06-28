@@ -1,8 +1,10 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/peiyouyao/gorder/common/consts"
+	"github.com/peiyouyao/gorder/common/handler/errors"
 
 	"github.com/gin-gonic/gin"
 	client "github.com/peiyouyao/gorder/common/client/order"
@@ -30,10 +32,11 @@ func (H *HTTPServer) PostCustomerCustomerIdOrders(c *gin.Context, customerID str
 	}()
 
 	if err = c.ShouldBind(&req); err != nil {
+		err = errors.NewWithError(consts.ErrnoBindRequest, err)
 		return
 	}
 	if !H.validate(&req) {
-		err = errors.New("negative quantity")
+		err = errors.NewWithError(consts.ErrnoInvalidParams, err)
 		return
 	}
 	r, err := H.app.Commands.CreateOrder.Handle(c.Request.Context(), command.CreateOrder{

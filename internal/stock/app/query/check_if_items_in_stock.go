@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"strings"
 	"time"
 
@@ -49,7 +50,7 @@ func NewCheckIfItemsInStockHandler(
 
 func (h checkIfItemsInStockHandler) Handle(ctx context.Context, query CheckIfItemsInStock) ([]*entity.Item, error) {
 	if err := lock(ctx, getLockKey(query)); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "redis lock error")
 	}
 	defer func() {
 		if err := unlock(ctx, getLockKey(query)); err != nil {

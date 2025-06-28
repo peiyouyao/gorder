@@ -2,7 +2,8 @@ package adapters
 
 import (
 	"context"
-	"errors"
+
+	"github.com/pkg/errors"
 
 	"github.com/peiyouyao/gorder/stock/entity"
 	"github.com/peiyouyao/gorder/stock/infrastructure/persistent"
@@ -25,7 +26,7 @@ func (m *MySQLStockRepository) GetItems(ctx context.Context, ids []string) ([]*e
 func (m *MySQLStockRepository) GetStock(ctx context.Context, ids []string) ([]*entity.ItemWithQuantity, error) {
 	data, err := m.db.BatchGetStockByID(ctx, ids)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get stock by ID")
 	}
 	var res []*entity.ItemWithQuantity
 	for _, d := range data {
@@ -54,7 +55,7 @@ func (m MySQLStockRepository) UpdateStock(
 		}()
 		var dest []*persistent.StockModel
 		if err = tx.Table("o_stock").Where("product_id IN ?", getIDFromEntities(data)).Find(&dest).Error; err != nil {
-			return errors.New("failed to get existing stock")
+			return errors.Wrap(err, "failed to get existing stock")
 		}
 		existing := m.unmarshalFromDatabase(dest)
 
@@ -65,7 +66,7 @@ func (m MySQLStockRepository) UpdateStock(
 
 		for _, upd := range updated {
 			if err = tx.Table("o_stock").Where("product_id = ?", upd.ID).Update("quantity", upd.Quantity).Error; err != nil {
-				return errors.New("unable to update" + upd.ID)
+				return errors.Wrap(err, "unable to update"+upd.ID)
 			}
 		}
 		return nil

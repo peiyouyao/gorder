@@ -21,8 +21,6 @@ type createPaymentHandler struct {
 }
 
 func (c createPaymentHandler) Handle(ctx context.Context, cmd CreatePayment) (string, error) {
-	// return "test-retry-link", errors.New("test-retry-error")
-
 	link, err := c.processor.CreatePaymentLink(ctx, cmd.Order)
 	if err != nil {
 		return "", err
