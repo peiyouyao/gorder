@@ -9,6 +9,7 @@ import (
 	"github.com/peiyouyao/gorder/stock/infrastructure/persistent"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type MySQLStockRepository struct {
@@ -54,7 +55,13 @@ func (m MySQLStockRepository) UpdateStock(
 			}
 		}()
 		var dest []*persistent.StockModel
-		if err = tx.Table("o_stock").Where("product_id IN ?", getIDFromEntities(data)).Find(&dest).Error; err != nil {
+		/*
+			1. 悲观锁 (排他锁) SELECT * FROM o_stock WHERE product_id IN ? FOR UPDATE
+			2. 乐观锁
+		*/
+		if err = tx.Table("o_stock").
+			Clauses(clause.Locking{Strength: "UPDATE"}). // 悲观锁
+			Where("product_id IN ?", getIDFromEntities(data)).Find(&dest).Error; err != nil {
 			return errors.Wrap(err, "failed to get existing stock")
 		}
 		existing := m.unmarshalFromDatabase(dest)

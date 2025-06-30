@@ -27,6 +27,11 @@ func (m StockModel) TableName() string {
 	return "o_stock"
 }
 
+func (m *StockModel) BeforeCreate(tx *gorm.DB) (err error) {
+	m.UpdatedAt = time.Now()
+	return nil
+}
+
 func NewMySQL() *MySQL {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
 		viper.GetString("mysql.user"),
@@ -54,4 +59,15 @@ func (d MySQL) BatchGetStockByID(ctx context.Context, productIDs []string) ([]St
 		return nil, tx.Error
 	}
 	return res, nil
+}
+
+func NewMySQLWithDB(db *gorm.DB) *MySQL {
+	if db == nil {
+		logrus.Panic("db is nil")
+	}
+	return &MySQL{db: db}
+}
+
+func (d MySQL) Create(ctx context.Context, create *StockModel) error {
+	return d.db.WithContext(ctx).Create(create).Error
 }
