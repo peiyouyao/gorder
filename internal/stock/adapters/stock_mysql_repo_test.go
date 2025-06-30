@@ -79,7 +79,7 @@ func TestMySQLStockRepo_UpdateStock_Race(t *testing.T) {
 					var newItems []*entity.ItemWithQuantity
 					for _, e := range existing {
 						for _, q := range query {
-							if e.ID == q.ID {
+							if e.ID == q.ID && e.Quantity >= q.Quantity {
 								newItems = append(newItems, &entity.ItemWithQuantity{
 									ID:       e.ID,
 									Quantity: e.Quantity - q.Quantity,
@@ -101,4 +101,62 @@ func TestMySQLStockRepo_UpdateStock_Race(t *testing.T) {
 
 	expected := initialStock - int32(goroutines)
 	assert.Equal(t, expected, res[0].Quantity)
+}
+
+func TestMySQLStockRepo_UpdateStock_OverSell(t *testing.T) {
+	t.Parallel()
+	db := setupTestDB(t)
+
+	var (
+		ctx                = context.Background()
+		testItem           = "test-race-item"
+		initialStock int32 = 5
+	)
+
+	err := db.Create(ctx, &persistent.StockModel{
+		ProductID: testItem,
+		Quantity:  initialStock,
+	})
+	assert.NoError(t, err)
+
+	repo := NewMySQLStockRepository(db)
+
+	var wg sync.WaitGroup
+	goroutines := 10
+	for i := 0; i < goroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := repo.UpdateStock(
+				ctx,
+				[]*entity.ItemWithQuantity{{ID: testItem, Quantity: 1}},
+				func(
+					ctx context.Context,
+					existing []*entity.ItemWithQuantity,
+					query []*entity.ItemWithQuantity) ([]*entity.ItemWithQuantity, error) {
+					var newItems []*entity.ItemWithQuantity
+					for _, e := range existing {
+						for _, q := range query {
+							if e.ID == q.ID && e.Quantity >= q.Quantity {
+								newItems = append(newItems, &entity.ItemWithQuantity{
+									ID:       e.ID,
+									Quantity: e.Quantity - q.Quantity,
+								})
+							}
+						}
+					}
+					return newItems, nil
+				},
+			)
+			assert.NoError(t, err, "UpdateStock failed in goroutine")
+		}()
+	}
+	wg.Wait()
+
+	res, err := db.BatchGetStockByID(ctx, []string{testItem})
+	assert.NoError(t, err, "BatchGetStockByID failed")
+	assert.NotEmpty(t, res, "Expected stock record to exist after updates")
+
+	fmt.Println(res[0])
+	assert.GreaterOrEqual(t, res[0].Quantity, int32(0))
 }

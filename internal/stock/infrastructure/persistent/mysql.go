@@ -21,6 +21,7 @@ type StockModel struct {
 	Quantity  int32     `gorm:"column:quantity"`
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
+	Version   int64     `gorm:"column:version"` // 乐观锁版本号
 }
 
 func (m StockModel) TableName() string {

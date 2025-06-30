@@ -54,30 +54,68 @@ func (m MySQLStockRepository) UpdateStock(
 				logrus.Warnf("transaction failed, err = %v", err)
 			}
 		}()
-		var dest []*persistent.StockModel
-		/*
-			1. 悲观锁 (排他锁) SELECT * FROM o_stock WHERE product_id IN ? FOR UPDATE
-			2. 乐观锁
-		*/
-		if err = tx.Table("o_stock").
-			Clauses(clause.Locking{Strength: "UPDATE"}). // 悲观锁
-			Where("product_id IN ?", getIDFromEntities(data)).Find(&dest).Error; err != nil {
-			return errors.Wrap(err, "failed to get existing stock")
-		}
-		existing := m.unmarshalFromDatabase(dest)
+		err = m.updateWithPessimisticLock(ctx, tx, data, updateFn)
+		// err = m.updateWithOptimisticLock(ctx, tx, data, updateFn)
+		return err
+	})
+}
 
-		updated, err := updateFn(ctx, existing, data)
-		if err != nil {
+// 悲观锁 (排他锁) SELECT * FROM o_stock WHERE product_id IN ? FOR UPDATE
+func (m MySQLStockRepository) updateWithPessimisticLock(
+	ctx context.Context,
+	tx *gorm.DB,
+	data []*entity.ItemWithQuantity,
+	updateFn func(context.Context, []*entity.ItemWithQuantity, []*entity.ItemWithQuantity) ([]*entity.ItemWithQuantity, error)) (err error) {
+	var dest []*persistent.StockModel
+	if err = tx.Model(&persistent.StockModel{}).
+		Clauses(clause.Locking{Strength: "UPDATE"}). // 悲观锁
+		Where("product_id IN ?", getIDFromEntities(data)).Find(&dest).Error; err != nil {
+		return errors.Wrap(err, "failed to get existing stock")
+	}
+	existing := m.unmarshalFromDatabase(dest)
+
+	updated, err := updateFn(ctx, existing, data)
+	if err != nil {
+		return err
+	}
+
+	for _, upd := range updated {
+		if err = tx.Model(&persistent.StockModel{}).Where("product_id = ?", upd.ID).Update("quantity", upd.Quantity).Error; err != nil {
+			return errors.Wrap(err, "unable to update"+upd.ID)
+		}
+	}
+	return nil
+}
+
+// 乐观锁
+func (m MySQLStockRepository) updateWithOptimisticLock(
+	ctx context.Context,
+	tx *gorm.DB,
+	data []*entity.ItemWithQuantity,
+	updateFn func(context.Context, []*entity.ItemWithQuantity, []*entity.ItemWithQuantity) ([]*entity.ItemWithQuantity, error)) (err error) {
+	var dest []*persistent.StockModel
+	if err := tx.Model(&persistent.StockModel{}).
+		Where("product_id IN (?)", getIDFromEntities(data)).
+		Find(&dest).Error; err != nil {
+		return errors.Wrap(err, "failed to find data")
+	}
+
+	for _, queryData := range data {
+		var newest persistent.StockModel
+		if err := tx.Model(&persistent.StockModel{}).Where("product_id = ?", queryData.ID).
+			First(&newest).Error; err != nil {
 			return err
 		}
-
-		for _, upd := range updated {
-			if err = tx.Table("o_stock").Where("product_id = ?", upd.ID).Update("quantity", upd.Quantity).Error; err != nil {
-				return errors.Wrap(err, "unable to update"+upd.ID)
-			}
+		if err := tx.Model(&persistent.StockModel{}).
+			Where("product_id = ? AND version = ? AND quantity - ? >= 0", queryData.ID, newest.Version, queryData.Quantity).
+			Updates(map[string]any{
+				"quantity": gorm.Expr("quantity - ?", queryData.Quantity),
+				"version":  newest.Version + 1,
+			}).Error; err != nil {
+			return err
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func (m MySQLStockRepository) unmarshalFromDatabase(dest []*persistent.StockModel) []*entity.ItemWithQuantity {
