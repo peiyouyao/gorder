@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/peiyouyao/gorder/common/logging"
+	"github.com/peiyouyao/gorder/stock/infrastructure/persistent/builder"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
@@ -53,13 +55,12 @@ func (d MySQL) StartTransaction(f func(tx *gorm.DB) error) error {
 	return d.db.Transaction(f)
 }
 
-func (d MySQL) BatchGetStockByID(ctx context.Context, productIDs []string) ([]StockModel, error) {
-	var res []StockModel
-	tx := d.db.WithContext(ctx).Where("product_id IN ?", productIDs).Find(&res)
-	if tx.Error != nil {
-		return nil, tx.Error
-	}
-	return res, nil
+func (d MySQL) BatchGetStockByID(ctx context.Context, query *builder.Stock) (res []StockModel, err error) {
+	_, logFn := logging.WhenMySQL(ctx, "BatchGetStockByID", query)
+	tx := query.Fill(d.db.WithContext(ctx)).Find(&res)
+	err = tx.Error
+	defer logFn(res, &err)
+	return res, err
 }
 
 func NewMySQLWithDB(db *gorm.DB) *MySQL {
@@ -69,6 +70,9 @@ func NewMySQLWithDB(db *gorm.DB) *MySQL {
 	return &MySQL{db: db}
 }
 
-func (d MySQL) Create(ctx context.Context, create *StockModel) error {
-	return d.db.WithContext(ctx).Create(create).Error
+func (d MySQL) Create(ctx context.Context, create *StockModel) (err error) {
+	_, logFn := logging.WhenMySQL(ctx, "Create", create)
+	err = d.db.WithContext(ctx).Create(create).Error
+	defer logFn(create, &err)
+	return err
 }
