@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 func TestMySQLStockRepo_UpdateStock_Race(t *testing.T) {
@@ -26,7 +27,7 @@ func TestMySQLStockRepo_UpdateStock_Race(t *testing.T) {
 		initialStock int32 = 100
 	)
 
-	err := db.Create(ctx, &persistent.StockModel{
+	err := db.Create(ctx, nil, &persistent.StockModel{
 		ProductID: testItem,
 		Quantity:  initialStock,
 	})
@@ -67,7 +68,7 @@ func TestMySQLStockRepo_UpdateStock_Race(t *testing.T) {
 	wg.Wait()
 
 	query := builder.NewStock().ProductIDs(testItem)
-	res, err := db.BatchGetStockByID(ctx, query)
+	res, err := db.GetBatchByID(ctx, query)
 	assert.NoError(t, err, "BatchGetStockByID failed")
 	assert.NotEmpty(t, res, "Expected stock record to exist after updates")
 
@@ -85,7 +86,7 @@ func TestMySQLStockRepo_UpdateStock_OverSell(t *testing.T) {
 		initialStock int32 = 5
 	)
 
-	err := db.Create(ctx, &persistent.StockModel{
+	err := db.Create(ctx, nil, &persistent.StockModel{
 		ProductID: testItem,
 		Quantity:  initialStock,
 	})
@@ -126,7 +127,7 @@ func TestMySQLStockRepo_UpdateStock_OverSell(t *testing.T) {
 	wg.Wait()
 
 	query := builder.NewStock().ProductIDs(testItem)
-	res, err := db.BatchGetStockByID(ctx, query)
+	res, err := db.GetBatchByID(ctx, query)
 	assert.NoError(t, err, "BatchGetStockByID failed")
 	assert.NotEmpty(t, res, "Expected stock record to exist after updates")
 
@@ -157,7 +158,9 @@ func setupTestDB(t *testing.T) *persistent.MySQL {
 		viper.GetString("mysql.port"),
 		testDB,
 	)
-	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: gormlogger.Default.LogMode(gormlogger.Info),
+	})
 	assert.NoError(t, err)
 	assert.NoError(t, db.AutoMigrate(&persistent.StockModel{}), "Failed to migrate StockModel")
 
