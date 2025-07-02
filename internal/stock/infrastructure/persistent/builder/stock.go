@@ -1,82 +1,90 @@
 package builder
 
 import (
+	"encoding/json"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 type Stock struct {
-	id        []int64
-	productID []string
-	quantity  []int32
-	version   []int64
+	ID_        []int64  `json:"id,omitempty"`
+	ProductID_ []string `json:"product_id,omitempty"`
+	Quantity_  []int32  `json:"quantity,omitempty"`
+	Version_   []int64  `json:"version,omitempty"`
 
 	// extend fields
-	order     string
-	forUpdate bool
+	OrderBy_   string `json:"order_by,omitempty"`
+	ForUpdate_ bool   `json:"for_update,omitempty"`
 }
 
 func NewStock() *Stock {
 	return &Stock{}
 }
 
+// implement ArgFormatter interface
+func (s *Stock) FormatArg() (string, error) {
+	bytes, err := json.Marshal(s)
+	return string(bytes), err
+}
+
 func (s *Stock) Fill(db *gorm.DB) *gorm.DB {
 	db = s.fillWhere(db)
-	if s.order != "" {
-		db = db.Order(s.order)
+	if s.OrderBy_ != "" {
+		db = db.Order(s.OrderBy_)
 	}
 	return db
 }
 func (s *Stock) fillWhere(db *gorm.DB) *gorm.DB {
-	if len(s.id) > 0 {
-		db = db.Where("id in (?)", s.id)
+	if len(s.ID_) > 0 {
+		db = db.Where("id in (?)", s.ID_)
 	}
-	if len(s.productID) > 0 {
-		db = db.Where("product_id in (?)", s.productID)
+	if len(s.ProductID_) > 0 {
+		db = db.Where("product_id in (?)", s.ProductID_)
 	}
-	if len(s.version) > 0 {
-		db = db.Where("version in (?)", s.version)
+	if len(s.Version_) > 0 {
+		db = db.Where("version in (?)", s.Version_)
 	}
-	if len(s.quantity) > 0 {
+	if len(s.Quantity_) > 0 {
 		db = s.fillQuantityGT(db)
 	}
 
-	if s.forUpdate {
+	if s.ForUpdate_ {
 		db = db.Clauses(clause.Locking{Strength: clause.LockingStrengthUpdate})
 	}
 	return db
 }
 func (s *Stock) fillQuantityGT(db *gorm.DB) *gorm.DB {
-	db = db.Where("quantity >= ?", s.quantity)
+	db = db.Where("quantity >= ?", s.Quantity_)
 	return db
 }
 
 func (s *Stock) IDs(v ...int64) *Stock {
-	s.id = v
+	s.ID_ = v
 	return s
 }
 
 func (s *Stock) ProductIDs(v ...string) *Stock {
-	s.productID = v
+	s.ProductID_ = v
 	return s
 }
 
-func (s *Stock) Order(v string) *Stock {
-	s.order = v
+func (s *Stock) OrderBy(v string) *Stock {
+	s.OrderBy_ = v
 	return s
 }
 
 func (s *Stock) Versions(v ...int64) *Stock {
-	s.version = v
+	s.Version_ = v
 	return s
 }
 
 func (s *Stock) QuantityGT(v ...int32) *Stock {
-	s.quantity = v
+	s.Quantity_ = v
 	return s
 }
 
 func (s *Stock) ForUpdate() *Stock {
-	s.forUpdate = true
+	s.ForUpdate_ = true
 	return s
 }
