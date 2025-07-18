@@ -7,6 +7,7 @@ import (
 
 	"github.com/peiyouyao/gorder/common/broker"
 	"github.com/peiyouyao/gorder/common/decorator"
+	"github.com/peiyouyao/gorder/common/metrics"
 	"github.com/peiyouyao/gorder/order/app/query"
 	"github.com/peiyouyao/gorder/order/convertor"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
@@ -39,7 +40,7 @@ func NewCreateOrderHandler(
 	stockGRPC query.StockService,
 	channel *amqp.Channel,
 	logger *logrus.Entry,
-	metricClient decorator.MetricsClient,
+	metricClient metrics.MetricsClient,
 ) CreateOrderHandler {
 	if orderRepo == nil {
 		panic("nil orderRepo")

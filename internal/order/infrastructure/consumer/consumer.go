@@ -38,13 +38,12 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 		logrus.Fatal(err)
 	}
 
-	var forever chan struct{}
 	go func() {
 		for msg := range msgs {
 			c.handleMessage(ch, msg, q)
 		}
 	}()
-	<-forever
+	select {} // block forever
 }
 
 func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Queue) {

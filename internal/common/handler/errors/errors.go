@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/peiyouyao/gorder/common/consts"
+	"github.com/peiyouyao/gorder/common/constants"
 )
 
 type Error struct {
@@ -14,7 +14,7 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	return consts.ErrMsg[e.code] + " -> " + e.err.Error()
+	return constants.ErrMsg[e.code] + " -> " + e.err.Error()
 }
 
 func New(code int) error {
@@ -42,7 +42,7 @@ func NewWithMsgf(code int, format string, args ...any) error {
 
 func Errno(err error) int {
 	if err == nil {
-		return consts.ErrnoSuccess
+		return constants.ErrnoSuccess
 	}
 	targetError := &Error{}
 	if errors.As(err, &targetError) {
@@ -53,11 +53,11 @@ func Errno(err error) int {
 
 func Output(err error) (int, string) {
 	if err == nil {
-		return consts.ErrnoSuccess, consts.ErrMsg[consts.ErrnoSuccess]
+		return constants.ErrnoSuccess, constants.ErrMsg[constants.ErrnoSuccess]
 	}
 	errno := Errno(err)
 	if errno == -1 {
-		return consts.ErrnoUnknown, err.Error()
+		return constants.ErrnoUnknown, err.Error()
 	}
 	return errno, err.Error()
 }

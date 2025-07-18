@@ -3,6 +3,7 @@ package decorator
 import (
 	"context"
 
+	"github.com/peiyouyao/gorder/common/metrics"
 	"github.com/sirupsen/logrus"
 )
 
@@ -11,16 +12,16 @@ type QueryHandler[Q any, R any] interface {
 	Handle(ctx context.Context, query Q) (R, error)
 }
 
-func ApplyQueryDecorators[H, R any](
-	handler QueryHandler[H, R],
+func ApplyQueryDecorators[Q, R any](
+	handler QueryHandler[Q, R],
 	logger *logrus.Entry,
-	metricsClient MetricsClient,
-) QueryHandler[H, R] {
-	return queryLoggingDecorator[H, R]{
+	metrics metrics.MetricsClient,
+) QueryHandler[Q, R] {
+	return queryLoggingDecorator[Q, R]{
 		logger: logger,
-		base: queryMetricsDecorator[H, R]{
-			base:   handler,
-			client: metricsClient,
+		handler: queryMetricsDecorator[Q, R]{
+			handler: handler,
+			metrics: metrics,
 		},
 	}
 }

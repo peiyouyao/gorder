@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	DLX                = "dlx"
-	DLQ                = "dlq"
+	dlx                = "dlx"
+	dlq                = "dlq"
 	amqpRetryHeaderKey = "x-retry-count"
 )
 
@@ -57,20 +57,21 @@ func createDLX(ch *amqp.Channel) (err error) {
 		return
 	}
 
-	err = ch.ExchangeDeclare(DLX, "fanout", true, false, false, false, nil)
+	err = ch.ExchangeDeclare(dlx, "fanout", true, false, false, false, nil)
 	if err != nil {
 		return
 	}
 
-	err = ch.QueueBind(q.Name, "", DLX, false, nil)
+	err = ch.QueueBind(q.Name, "", dlx, false, nil)
 	if err != nil {
 		return
 	}
 
-	_, err = ch.QueueDeclare(DLQ, true, false, false, false, nil)
+	_, err = ch.QueueDeclare(dlq, true, false, false, false, nil)
 	return
 }
 
+// confirm consumer **receive** a message
 func HandleRetry(ctx context.Context, ch *amqp.Channel, d *amqp.Delivery) error {
 	if d.Headers == nil {
 		d.Headers = amqp.Table{}
@@ -91,7 +92,7 @@ func HandleRetry(ctx context.Context, ch *amqp.Channel, d *amqp.Delivery) error 
 
 	if retryCnt >= maxRetryCnt {
 		logrus.Infof("moveing message %s to dlq", d.MessageId)
-		return ch.PublishWithContext(ctx, "", DLQ, false, false, publishing)
+		return ch.PublishWithContext(ctx, "", dlq, false, false, publishing)
 	}
 
 	logrus.Infof("retrying message %s, count=%d", d.MessageId, retryCnt)
@@ -99,6 +100,7 @@ func HandleRetry(ctx context.Context, ch *amqp.Channel, d *amqp.Delivery) error 
 	return ch.PublishWithContext(ctx, d.Exchange, d.RoutingKey, false, false, publishing)
 }
 
+// impl propagation.TextMapCarrier
 type RabbitMQHeaderCarrier map[string]interface{}
 
 func (r RabbitMQHeaderCarrier) Get(key string) string {

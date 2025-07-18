@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/peiyouyao/gorder/common/decorator"
+	"github.com/peiyouyao/gorder/common/metrics"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
 	"github.com/sirupsen/logrus"
 )
@@ -22,7 +23,7 @@ type getCustomerOrderHandler struct {
 func NewGetCustomerOrderHandler(
 	orderRepo domain.Repository,
 	logger *logrus.Entry,
-	metricsClient decorator.MetricsClient,
+	metricsClient metrics.MetricsClient,
 ) GetCustomerOrderHandler {
 	if orderRepo == nil {
 		panic("nil orderRepo")

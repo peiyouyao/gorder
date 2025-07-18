@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/peiyouyao/gorder/common/decorator"
+	"github.com/peiyouyao/gorder/common/metrics"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
 	"github.com/sirupsen/logrus"
 )
@@ -23,7 +24,7 @@ type updateOrderHandler struct {
 func NewUpdateOrderHandler(
 	orderRepo domain.Repository,
 	logger *logrus.Entry,
-	metricsClient decorator.MetricsClient,
+	metricsClient metrics.MetricsClient,
 ) UpdateOrderHandler {
 	if orderRepo == nil {
 		panic("nil orderRepo")

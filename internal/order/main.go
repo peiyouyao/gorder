@@ -25,10 +25,6 @@ func init() {
 
 func main() {
 	serviceName := viper.GetString("order.service-name")
-	serverType := viper.GetString("order.server-to-run")
-	if serverType != "http" && serverType != "grpc" {
-		panic("unexpected server type: " + serverType)
-	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

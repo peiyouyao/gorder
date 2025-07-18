@@ -33,7 +33,6 @@ func newViperConfig() error {
 
 	viper.SetConfigName("global")
 	viper.SetConfigType("yaml")
-	// viper.AddConfigPath("../common/config")
 	viper.AddConfigPath(relPath)
 	_ = viper.BindEnv("stripe-key", "STRIPE_KEY")
 	_ = viper.BindEnv("endpoint-stripe-secret", "ENDPOINT_STRIPE_SECRET")

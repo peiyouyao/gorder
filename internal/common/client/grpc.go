@@ -17,7 +17,7 @@ import (
 )
 
 func NewStockGRPCClient(ctx context.Context) (client stockpb.StockServiceClient, close func() error, err error) {
-	if !WaitForStockGRPCClinet(viper.GetDuration("dial-grpc-timeout") * time.Second) {
+	if !waitForStockGRPCClinet(viper.GetDuration("dial-grpc-timeout") * time.Second) {
 		return nil, nil, errors.New("stock grpc not available")
 	}
 
@@ -38,7 +38,7 @@ func NewStockGRPCClient(ctx context.Context) (client stockpb.StockServiceClient,
 }
 
 func NewOrderGRPCClient(ctx context.Context) (client orderpb.OrderServiceClient, close func() error, err error) {
-	if !WaitForOrderGRPCClinet(viper.GetDuration("dial-grpc-timeout") * time.Second) {
+	if !waitForOrderGRPCClinet(viper.GetDuration("dial-grpc-timeout") * time.Second) {
 		return nil, nil, errors.New("order grpc not available")
 	}
 
@@ -65,13 +65,13 @@ func grpcDialOpts() []grpc.DialOption {
 	}
 }
 
-func WaitForOrderGRPCClinet(timeout time.Duration) bool {
+func waitForOrderGRPCClinet(timeout time.Duration) bool {
 	logrus.Infof("waiting for order grpc client, timeout: %v seconds", timeout.Seconds())
 	return waitFor(viper.GetString("order.grpc-addr"), timeout)
 
 }
 
-func WaitForStockGRPCClinet(timeout time.Duration) bool {
+func waitForStockGRPCClinet(timeout time.Duration) bool {
 	logrus.Infof("waiting for stock grpc client, timeout: %v seconds", timeout.Seconds())
 	return waitFor(viper.GetString("stock.grpc-addr"), timeout)
 }

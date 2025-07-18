@@ -22,7 +22,6 @@ func init() {
 
 func main() {
 	serviceName := viper.GetString("stock.service-name")
-	serverType := viper.GetString("stock.server-to-run")
 
 	ctx, cancal := context.WithCancel(context.Background())
 	defer cancal()
@@ -43,16 +42,8 @@ func main() {
 		_ = deregisterFn()
 	}()
 
-	switch serverType {
-	case "grpc":
-		server.RunGRPCServer(serviceName, func(server *grpc.Server) {
-			svc := ports.NewGRPCServer(application)
-			stockpb.RegisterStockServiceServer(server, svc)
-		})
-	case "http":
-		// todo
-	default:
-		panic("unexpected server type: " + serverType)
-	}
-
+	server.RunGRPCServer(serviceName, func(server *grpc.Server) {
+		svc := ports.NewGRPCServer(application)
+		stockpb.RegisterStockServiceServer(server, svc)
+	})
 }

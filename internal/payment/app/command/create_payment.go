@@ -3,14 +3,18 @@ package command
 import (
 	"context"
 
+	"github.com/peiyouyao/gorder/common/constants"
+	"github.com/peiyouyao/gorder/common/convert"
 	"github.com/peiyouyao/gorder/common/decorator"
-	"github.com/peiyouyao/gorder/common/genproto/orderpb"
+	"github.com/peiyouyao/gorder/common/entity"
+	"github.com/peiyouyao/gorder/common/logging"
+	"github.com/peiyouyao/gorder/common/metrics"
 	"github.com/peiyouyao/gorder/payment/domain"
 	"github.com/sirupsen/logrus"
 )
 
 type CreatePayment struct {
-	Order *orderpb.Order
+	Order *entity.Order
 }
 
 type CreatePaymentHandler decorator.CommandHandler[CreatePayment, string]
@@ -20,20 +24,25 @@ type createPaymentHandler struct {
 	orderGRPC OrderService
 }
 
-func (c createPaymentHandler) Handle(ctx context.Context, cmd CreatePayment) (string, error) {
-	link, err := c.processor.CreatePaymentLink(ctx, cmd.Order)
+func (c createPaymentHandler) Handle(ctx context.Context, cmd CreatePayment) (link string, err error) {
+	defer logging.WhenCommandExecute(ctx, "CreatePaymentHandler", cmd, err)
+
+	if link, err = c.processor.CreatePaymentLink(ctx, cmd.Order); err != nil {
+		return
+	}
+
+	newOrder, err := entity.NewValidOrder(
+		cmd.Order.ID,
+		cmd.Order.CustomerID,
+		constants.OrderStatusWaitingForPayment,
+		link,
+		cmd.Order.Items,
+	)
 	if err != nil {
-		return "", err
+		return
 	}
-	logrus.Infof("create payment link for order: %s sucess, payment link: %s", cmd.Order.ID, link)
-	newOrder := &orderpb.Order{
-		ID:          cmd.Order.ID,
-		CustomerID:  cmd.Order.CustomerID,
-		Status:      "waiting_for_payment",
-		Items:       cmd.Order.Items,
-		PaymentLink: link,
-	}
-	err = c.orderGRPC.UpdateOrder(ctx, newOrder)
+
+	err = c.orderGRPC.UpdateOrder(ctx, convert.OrderEntityToProto(newOrder))
 	return link, err
 }
 
@@ -41,7 +50,7 @@ func NewCreatePaymentHandler(
 	processor domain.Processor,
 	orderGRPC OrderService,
 	logger *logrus.Entry,
-	metricsClient decorator.MetricsClient,
+	metrics metrics.MetricsClient,
 ) decorator.CommandHandler[CreatePayment, string] {
 
 	return decorator.ApplyCommandDecorators[CreatePayment, string](
@@ -50,6 +59,6 @@ func NewCreatePaymentHandler(
 			orderGRPC: orderGRPC,
 		},
 		logger,
-		metricsClient,
+		metrics,
 	)
 }

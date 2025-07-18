@@ -18,7 +18,7 @@ func NewApplication(ctx context.Context) app.Application {
 	stockRepo := adapters.NewMySQLStockRepository(db)
 	stripeAPI := intergration.NewStripeAPI()
 	logger := logrus.NewEntry(logrus.StandardLogger())
-	metricsClient := metrics.TodoMetrics{}
+	metricsClient := metrics.NoMetrics{}
 	return app.Application{
 		Commands: app.Commands{},
 		Queries: app.Queries{

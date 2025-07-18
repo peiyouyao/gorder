@@ -8,8 +8,8 @@ import (
 	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/peiyouyao/gorder/common/server"
 	"github.com/peiyouyao/gorder/common/tracing"
+	"github.com/peiyouyao/gorder/payment/app"
 	"github.com/peiyouyao/gorder/payment/infrastructure/consumer"
-	"github.com/peiyouyao/gorder/payment/service"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -24,15 +24,13 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	serverType := viper.GetString("payment.server-to-run")
-
 	shutdown, err := tracing.InitJaegerProvider(viper.GetString("jaeger.url"), serviceName)
 	if err != nil {
 		logrus.Fatal(err)
 	}
 	defer shutdown(ctx)
 
-	application, cleanup := service.NewApplication(ctx)
+	application, cleanup := app.NewApplication(ctx)
 	defer cleanup()
 
 	ch, closeCh := broker.Connect(
@@ -49,12 +47,5 @@ func main() {
 	go consumer.NewConsumer(application).Listen(ch)
 
 	paymentHandler := NewPaymentHandler(ch)
-	switch serverType {
-	case "http":
-		server.RunHTTPServer(serviceName, paymentHandler.RegisterRoutes)
-	case "grpc":
-		logrus.Panic("unsupported server type: grpc")
-	default:
-		logrus.Panic("unreachable code")
-	}
+	server.RunHTTPServer(serviceName, paymentHandler.RegisterRoutes)
 }

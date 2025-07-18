@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/peiyouyao/gorder/common/genproto/orderpb"
+	"github.com/peiyouyao/gorder/common/entity"
 	"github.com/peiyouyao/gorder/common/tracing"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/checkout/session"
 )
 
+// impl domain.Processor interface
 type StripeProcessor struct {
 	apiKey string
 }
@@ -27,7 +28,7 @@ const (
 	successURL = "http://localhost:8282/success"
 )
 
-func (s StripeProcessor) CreatePaymentLink(ctx context.Context, order *orderpb.Order) (string, error) {
+func (s StripeProcessor) CreatePaymentLink(ctx context.Context, order *entity.Order) (string, error) {
 	_, span := tracing.Start(ctx, "stripe_processor.create_payment_link")
 	defer span.End()
 

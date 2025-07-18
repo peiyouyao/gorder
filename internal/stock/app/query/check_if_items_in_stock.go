@@ -2,12 +2,14 @@ package query
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/peiyouyao/gorder/common/decorator"
 	"github.com/peiyouyao/gorder/common/handler/redis"
+	"github.com/peiyouyao/gorder/common/metrics"
 	domain "github.com/peiyouyao/gorder/stock/domain/stock"
 	"github.com/peiyouyao/gorder/stock/entity"
 	"github.com/peiyouyao/gorder/stock/infrastructure/intergration"
@@ -33,7 +35,7 @@ func NewCheckIfItemsInStockHandler(
 	stockRepo domain.Repository,
 	stripeAPI *intergration.StripeAPI,
 	logger *logrus.Entry,
-	metricsClient decorator.MetricsClient,
+	metricsClient metrics.MetricsClient,
 ) CheckIfItemsInStockHandler {
 	if stockRepo == nil {
 		panic("nil stockRepo")

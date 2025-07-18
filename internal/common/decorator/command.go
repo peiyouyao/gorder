@@ -3,6 +3,7 @@ package decorator
 import (
 	"context"
 
+	"github.com/peiyouyao/gorder/common/metrics"
 	"github.com/sirupsen/logrus"
 )
 
@@ -13,13 +14,13 @@ type CommandHandler[C, R any] interface {
 func ApplyCommandDecorators[C, R any](
 	handler CommandHandler[C, R],
 	logger *logrus.Entry,
-	metricsClient MetricsClient,
+	metrics metrics.MetricsClient,
 ) CommandHandler[C, R] {
 	return commandLoggingDecorator[C, R]{
 		logger: logger,
-		base: commandMetricsDecorator[C, R]{
-			base:   handler,
-			client: metricsClient,
+		handler: commandMetricsDecorator[C, R]{
+			handler: handler,
+			metrics: metrics,
 		},
 	}
 }

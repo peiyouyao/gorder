@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/peiyouyao/gorder/common/broker"
-	"github.com/peiyouyao/gorder/common/genproto/orderpb"
+	"github.com/peiyouyao/gorder/common/entity"
 	"github.com/peiyouyao/gorder/payment/app"
 	"github.com/peiyouyao/gorder/payment/app/command"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -35,13 +35,12 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 		logrus.Warnf("fail to consume: queue=%s, err=%v", q.Name, err)
 	}
 
-	var forever chan struct{}
 	go func() {
 		for msg := range msgs {
 			c.handleMessage(ch, msg, q)
 		}
 	}()
-	<-forever
+	select {}
 }
 
 func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Queue) {
@@ -61,7 +60,7 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 		}
 	}()
 
-	o := &orderpb.Order{}
+	o := &entity.Order{}
 	if err = json.Unmarshal(msg.Body, o); err != nil {
 		logrus.Infof("failed to unmarshal msg to order, err=%v", err)
 		return

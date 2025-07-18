@@ -6,6 +6,7 @@ import (
 	"github.com/peiyouyao/gorder/common/genproto/orderpb"
 )
 
+// impl consumer.OrderService
 type OrderGRPC struct {
 	client orderpb.OrderServiceClient
 }

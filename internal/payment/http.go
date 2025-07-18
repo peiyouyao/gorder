@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,8 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/peiyouyao/gorder/common/broker"
-	"github.com/peiyouyao/gorder/common/genproto/orderpb"
-	"github.com/peiyouyao/gorder/payment/domain"
+	"github.com/peiyouyao/gorder/common/constants"
+	"github.com/peiyouyao/gorder/common/entity"
+	"github.com/peiyouyao/gorder/common/logging"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -27,12 +27,23 @@ func NewPaymentHandler(ch *amqp.Channel) *PaymentHandler {
 	return &PaymentHandler{channel: ch}
 }
 
+// stripe listen --forward-to localhost:8284/api/webhook
 func (h *PaymentHandler) RegisterRoutes(c *gin.Engine) {
 	c.POST("/api/webhook", h.handleWebhook)
 }
 
 func (h *PaymentHandler) handleWebhook(c *gin.Context) {
-	logrus.Info("receive webhook from stripe")
+	logging.Infof(c.Request.Context(), nil, "receive webhook from stripe")
+
+	var err error
+	defer func() {
+		if err != nil {
+			logging.Warnf(c.Request.Context(), nil, "handleWebhook err=%v", err)
+		} else {
+			logging.Infof(c.Request.Context(), nil, "handleWebhook success")
+		}
+	}()
+
 	const MaxBodyBytes = int64(65536)
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxBodyBytes)
 	payload, err := io.ReadAll(c.Request.Body)
@@ -61,39 +72,28 @@ func (h *PaymentHandler) handleWebhook(c *gin.Context) {
 		}
 
 		if session.PaymentStatus == stripe.CheckoutSessionPaymentStatusPaid {
-			logrus.Infof("payment for checkout session %v success!", session.ID)
-
-			ctx, cancel := context.WithCancel(context.TODO())
-			defer cancel()
-
-			var items []*orderpb.Item
+			var items []*entity.Item
 			_ = json.Unmarshal([]byte(session.Metadata["items"]), &items)
 
-			marshalledOrder, err := json.Marshal(&domain.Order{
-				ID:          session.Metadata["orderID"],
-				CustomerID:  session.Metadata["customerID"],
-				Status:      string(stripe.CheckoutSessionPaymentStatusPaid),
-				PaymentLink: session.Metadata["paymentLink"],
-				Items:       items,
-			})
-			if err != nil {
-				logrus.Infof("error marshal domain.order, err = %v", err)
-				c.JSON(http.StatusBadRequest, err.Error())
-				return
-			}
-
 			tr := otel.Tracer("rabbitmq")
-			mqCtx, span := tr.Start(ctx, fmt.Sprintf("rabbitmq.%s.publish", broker.EventOrderPaid))
+			ctx, span := tr.Start(
+				c.Request.Context(),
+				fmt.Sprintf("rabbitmq.%s.publish", broker.EventOrderPaid),
+			)
 			defer span.End()
 
-			headers := broker.InjectRabbitMQHeaders(mqCtx)
-			_ = h.channel.PublishWithContext(mqCtx, broker.EventOrderPaid, "", false, false, amqp.Publishing{
-				ContentType:  "application/json",
-				DeliveryMode: amqp.Persistent,
-				Body:         marshalledOrder,
-				Headers:      headers,
+			err = broker.PublishEvent(ctx, broker.PublishEventReq{
+				Channel: h.channel,
+				Routing: broker.Fanout,
+				Queue:   "",
+				Body: entity.NewOrder(
+					session.Metadata["orderID"],
+					session.Metadata["customerID"],
+					constants.OrderStatusPaid,
+					session.Metadata["paymentLink"],
+					items,
+				),
 			})
-			logrus.Infof("message published to %s, body: %s", broker.EventOrderPaid, string(marshalledOrder))
 		}
 	}
 	c.JSON(http.StatusOK, nil)

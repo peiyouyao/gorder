@@ -33,7 +33,7 @@ func main() {
 	}
 	defer shutdown(ctx)
 
-	orderClient, closeFn, err := grpcClient.NewOrderGRPCClient(ctx)
+	orderGRPCCli, closeFn, err := grpcClient.NewOrderGRPCClient(ctx)
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -50,9 +50,10 @@ func main() {
 		_ = closeCh()
 	}()
 
-	orderGRPC := adapters.NewOrderGRPC(orderClient)
+	orderGRPC := adapters.NewOrderGRPC(orderGRPCCli)
 	go consumer.NewConsumer(orderGRPC).Listen(ch)
 
+	// ^C 退出 kitchen
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 

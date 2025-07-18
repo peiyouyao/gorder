@@ -48,7 +48,7 @@ func newAppliction(
 	mongoCli := newMongoClient()
 	orderRepo := adapters.NewOrderRepositoryMongo(mongoCli)
 	logger := logrus.NewEntry(logrus.StandardLogger())
-	metricsClient := metrics.TodoMetrics{}
+	metricsClient := metrics.NoMetrics{}
 
 	return app.Application{
 		Commands: app.Commands{
@@ -56,11 +56,7 @@ func newAppliction(
 			UpdateOrder: command.NewUpdateOrderHandler(orderRepo, logger, metricsClient),
 		},
 		Queries: app.Queries{
-			GetCustomerOrder: query.NewGetCustomerOrderHandler(
-				orderRepo,
-				logger,
-				metricsClient,
-			),
+			GetCustomerOrder: query.NewGetCustomerOrderHandler(orderRepo, logger, metricsClient),
 		},
 	}
 }
