@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/peiyouyao/gorder/stock/entity"
+	"github.com/peiyouyao/gorder/common/entity"
 )
 
 type Repository interface {

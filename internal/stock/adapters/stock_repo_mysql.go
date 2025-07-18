@@ -5,26 +5,26 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/peiyouyao/gorder/stock/entity"
+	"github.com/peiyouyao/gorder/common/entity"
 	"github.com/peiyouyao/gorder/stock/infrastructure/persistent"
 	"github.com/peiyouyao/gorder/stock/infrastructure/persistent/builder"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
-type MySQLStockRepository struct {
+type StockRepositoryMySQL struct {
 	db *persistent.MySQL
 }
 
-func NewMySQLStockRepository(db *persistent.MySQL) *MySQLStockRepository {
-	return &MySQLStockRepository{db: db}
+func NewStockRepositoryMySQL(db *persistent.MySQL) *StockRepositoryMySQL {
+	return &StockRepositoryMySQL{db: db}
 }
 
-func (m *MySQLStockRepository) GetItems(ctx context.Context, ids []string) ([]*entity.Item, error) {
+func (m *StockRepositoryMySQL) GetItems(ctx context.Context, ids []string) ([]*entity.Item, error) {
 	panic("")
 }
 
-func (m *MySQLStockRepository) GetStock(ctx context.Context, ids []string) ([]*entity.ItemWithQuantity, error) {
+func (m *StockRepositoryMySQL) GetStock(ctx context.Context, ids []string) ([]*entity.ItemWithQuantity, error) {
 	data, err := m.db.GetBatchByID(ctx, builder.NewStock().ProductIDs(ids...))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get stock by ID")
@@ -39,7 +39,7 @@ func (m *MySQLStockRepository) GetStock(ctx context.Context, ids []string) ([]*e
 	return res, nil
 }
 
-func (m MySQLStockRepository) UpdateStock(
+func (m StockRepositoryMySQL) UpdateStock(
 	ctx context.Context,
 	data []*entity.ItemWithQuantity,
 	updateFn func(
@@ -61,7 +61,7 @@ func (m MySQLStockRepository) UpdateStock(
 }
 
 // 悲观锁 (排他锁) SELECT * FROM o_stock WHERE product_id IN ? FOR UPDATE
-func (m MySQLStockRepository) updateWithPessimisticLock(
+func (m StockRepositoryMySQL) updateWithPessimisticLock(
 	ctx context.Context,
 	tx *gorm.DB,
 	data []*entity.ItemWithQuantity,
@@ -97,7 +97,7 @@ func (m MySQLStockRepository) updateWithPessimisticLock(
 }
 
 // 乐观锁
-func (m MySQLStockRepository) updateWithOptimisticLock(
+func (m StockRepositoryMySQL) updateWithOptimisticLock(
 	ctx context.Context,
 	tx *gorm.DB,
 	data []*entity.ItemWithQuantity,
@@ -125,7 +125,7 @@ func (m MySQLStockRepository) updateWithOptimisticLock(
 	return nil
 }
 
-func (m MySQLStockRepository) unmarshalFromDatabase(dest []persistent.StockModel) []*entity.ItemWithQuantity {
+func (m StockRepositoryMySQL) unmarshalFromDatabase(dest []persistent.StockModel) []*entity.ItemWithQuantity {
 	var result []*entity.ItemWithQuantity
 	for _, i := range dest {
 		result = append(result, &entity.ItemWithQuantity{

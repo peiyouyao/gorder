@@ -9,8 +9,8 @@ import (
 	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/peiyouyao/gorder/common/server"
 	"github.com/peiyouyao/gorder/common/tracing"
+	"github.com/peiyouyao/gorder/stock/app"
 	"github.com/peiyouyao/gorder/stock/ports"
-	"github.com/peiyouyao/gorder/stock/service"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -32,7 +32,7 @@ func main() {
 	}
 	defer shutdown(ctx)
 
-	application := service.NewApplication(ctx)
+	application := app.NewApplication(ctx)
 
 	deregisterFn, err := discovery.RegisterToConsul(ctx, serviceName)
 	if err != nil {

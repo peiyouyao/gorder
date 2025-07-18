@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/peiyouyao/gorder/common/decorator"
+	"github.com/peiyouyao/gorder/common/entity"
 	"github.com/peiyouyao/gorder/common/metrics"
 	domain "github.com/peiyouyao/gorder/stock/domain/stock"
-	"github.com/peiyouyao/gorder/stock/entity"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,7 +23,7 @@ type getItemsHandler struct {
 func NewGetItemsHandler(
 	stockRepo domain.Repository,
 	logger *logrus.Entry,
-	metricsClient metrics.MetricsClient,
+	metrics metrics.MetricsClient,
 ) GetItemsHandler {
 	if stockRepo == nil {
 		panic("nil stockRepo")
@@ -31,7 +31,7 @@ func NewGetItemsHandler(
 	return decorator.ApplyQueryDecorators[GetItems, []*entity.Item](
 		getItemsHandler{stockRepo: stockRepo},
 		logger,
-		metricsClient,
+		metrics,
 	)
 }
 

@@ -8,7 +8,7 @@ import (
 	domain "github.com/peiyouyao/gorder/stock/domain/stock"
 )
 
-type MemoryStockRepository struct {
+type StockRepositoryMemory struct {
 	lock  *sync.RWMutex
 	store map[string]*orderpb.Item
 }
@@ -40,14 +40,14 @@ var stub = map[string]*orderpb.Item{
 	},
 }
 
-func NewMemoryStockRepository() *MemoryStockRepository {
-	return &MemoryStockRepository{
+func NewMemoryStockRepository() *StockRepositoryMemory {
+	return &StockRepositoryMemory{
 		lock:  &sync.RWMutex{},
 		store: stub,
 	}
 }
 
-func (m MemoryStockRepository) GetItems(ctx context.Context, ids []string) ([]*orderpb.Item, error) {
+func (m StockRepositoryMemory) GetItems(ctx context.Context, ids []string) ([]*orderpb.Item, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	var (

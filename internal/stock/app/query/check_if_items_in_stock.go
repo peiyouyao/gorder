@@ -8,10 +8,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/peiyouyao/gorder/common/decorator"
+	"github.com/peiyouyao/gorder/common/entity"
 	"github.com/peiyouyao/gorder/common/handler/redis"
+	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/peiyouyao/gorder/common/metrics"
 	domain "github.com/peiyouyao/gorder/stock/domain/stock"
-	"github.com/peiyouyao/gorder/stock/entity"
 	"github.com/peiyouyao/gorder/stock/infrastructure/intergration"
 	"github.com/sirupsen/logrus"
 )
@@ -35,7 +36,7 @@ func NewCheckIfItemsInStockHandler(
 	stockRepo domain.Repository,
 	stripeAPI *intergration.StripeAPI,
 	logger *logrus.Entry,
-	metricsClient metrics.MetricsClient,
+	metrics metrics.MetricsClient,
 ) CheckIfItemsInStockHandler {
 	if stockRepo == nil {
 		panic("nil stockRepo")
@@ -46,34 +47,45 @@ func NewCheckIfItemsInStockHandler(
 	return decorator.ApplyQueryDecorators[CheckIfItemsInStock, []*entity.Item](
 		checkIfItemsInStockHandler{stockRepo: stockRepo, stripeAPI: stripeAPI},
 		logger,
-		metricsClient,
+		metrics,
 	)
 }
 
-func (h checkIfItemsInStockHandler) Handle(ctx context.Context, query CheckIfItemsInStock) ([]*entity.Item, error) {
-	if err := lock(ctx, getLockKey(query)); err != nil {
-		return nil, errors.Wrap(err, "redis lock error")
+func (h checkIfItemsInStockHandler) Handle(ctx context.Context, query CheckIfItemsInStock) (res []*entity.Item, err error) {
+	lockKey := getLockKey(query)
+	if err = lock(ctx, lockKey); err != nil {
+		return nil, errors.Wrapf(err, "redis lock error||key=%s", lockKey)
 	}
 	defer func() {
-		if err := unlock(ctx, getLockKey(query)); err != nil {
-			logrus.Warnf("unlock fail, err = %v", err)
+		f := logrus.Fields{
+			"query": query,
+			"res":   res,
+		}
+		if err != nil {
+			logging.Errorf(ctx, f, "checkIfItemsInStock error||err=%v", err)
+		} else {
+			logging.Infof(ctx, f, "checkIfItemsInStock success")
+		}
+
+		if err = unlock(ctx, lockKey); err != nil {
+			logging.Warnf(ctx, nil, "redis unlock error||err=%v", err)
 		}
 	}()
 
-	var res []*entity.Item
-	for _, i := range query.Items {
-		priceID, err := h.stripeAPI.GetPriceByProductID(ctx, i.ID)
+	for _, it := range query.Items {
+		priceID, err := h.stripeAPI.GetPriceByProductID(ctx, it.ID)
 		if err != nil {
-			logrus.Warnf("GetPriceByProductID error, item ID = %s, err = %v", i.ID, err)
-			continue
+			logging.Warnf(ctx, nil, "GetPriceByProductID error, item ID = %s, err = %v", it.ID, err)
+			return nil, err
 		}
 
 		res = append(res, &entity.Item{
-			ID:       i.ID,
-			Quantity: i.Quantity,
+			ID:       it.ID,
+			Quantity: it.Quantity,
 			PriceID:  priceID,
 		})
 	}
+
 	if err := h.checkStock(ctx, query.Items); err != nil {
 		return nil, err
 	}
@@ -96,10 +108,10 @@ func getLockKey(query CheckIfItemsInStock) string {
 	return redisLockPrefix + "items:" + strings.Join(ids, ",")
 }
 
-func (h checkIfItemsInStockHandler) checkStock(ctx context.Context, query []*entity.ItemWithQuantity) error {
+func (h checkIfItemsInStockHandler) checkStock(ctx context.Context, queryItems []*entity.ItemWithQuantity) error {
 	var ids []string
-	for _, i := range query {
-		ids = append(ids, i.ID)
+	for _, it := range queryItems {
+		ids = append(ids, it.ID)
 	}
 	records, err := h.stockRepo.GetStock(ctx, ids)
 	if err != nil {
@@ -118,7 +130,7 @@ func (h checkIfItemsInStockHandler) checkStock(ctx context.Context, query []*ent
 			Have int32
 		}
 	)
-	for _, item := range query {
+	for _, item := range queryItems {
 		if item.Quantity > idQuantityMap[item.ID] {
 			ok = false
 			failedOn = append(failedOn, struct {
@@ -131,19 +143,21 @@ func (h checkIfItemsInStockHandler) checkStock(ctx context.Context, query []*ent
 	if ok {
 		return h.stockRepo.UpdateStock(
 			ctx,
-			query,
+			queryItems,
 			func(
 				ctx context.Context,
 				existing []*entity.ItemWithQuantity,
-				query []*entity.ItemWithQuantity) ([]*entity.ItemWithQuantity, error) {
+				query []*entity.ItemWithQuantity,
+			) ([]*entity.ItemWithQuantity, error) {
 				var newItems []*entity.ItemWithQuantity
 				for _, e := range existing {
 					for _, q := range query {
 						if e.ID == q.ID {
-							newItems = append(newItems, &entity.ItemWithQuantity{
-								ID:       e.ID,
-								Quantity: e.Quantity - q.Quantity,
-							})
+							itq, err := entity.NewValidItemWithQuantity(e.ID, e.Quantity-q.Quantity)
+							if err != nil {
+								return nil, err
+							}
+							newItems = append(newItems, itq)
 						}
 					}
 				}

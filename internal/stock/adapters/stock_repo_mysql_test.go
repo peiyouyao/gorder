@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	_ "github.com/peiyouyao/gorder/common/config"
-	"github.com/peiyouyao/gorder/stock/entity"
+	"github.com/peiyouyao/gorder/common/entity"
 	"github.com/peiyouyao/gorder/stock/infrastructure/persistent"
 	"github.com/peiyouyao/gorder/stock/infrastructure/persistent/builder"
 	"github.com/spf13/viper"
@@ -33,7 +33,7 @@ func TestMySQLStockRepo_UpdateStock_Race(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	repo := NewMySQLStockRepository(db)
+	repo := NewStockRepositoryMySQL(db)
 
 	var wg sync.WaitGroup
 	goroutines := 10
@@ -92,7 +92,7 @@ func TestMySQLStockRepo_UpdateStock_OverSell(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	repo := NewMySQLStockRepository(db)
+	repo := NewStockRepositoryMySQL(db)
 
 	var wg sync.WaitGroup
 	goroutines := 10
