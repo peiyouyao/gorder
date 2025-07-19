@@ -6,12 +6,12 @@ import (
 	"fmt"
 
 	"github.com/peiyouyao/gorder/common/broker"
+	"github.com/peiyouyao/gorder/common/convert"
 	"github.com/peiyouyao/gorder/common/decorator"
+	"github.com/peiyouyao/gorder/common/entity"
 	"github.com/peiyouyao/gorder/common/metrics"
 	"github.com/peiyouyao/gorder/order/app/query"
-	"github.com/peiyouyao/gorder/order/convertor"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
-	"github.com/peiyouyao/gorder/order/entity"
 	"github.com/pkg/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
@@ -110,11 +110,11 @@ func (c createOrderHandler) validate(ctx context.Context, items []*entity.ItemWi
 		return nil, errors.New("must have at least one item")
 	}
 	items = packItems(items)
-	resp, err := c.stockGRPC.CheckIfItemsInStock(ctx, convertor.NewItemWithQuantityConvertor().EntitiesToProtos(items))
+	resp, err := c.stockGRPC.CheckIfItemsInStock(ctx, convert.ItemWithQuantityEntitiesToProtos(items))
 	if err != nil {
 		return nil, err
 	}
-	return convertor.NewItemConvertor().ProtosToEntities(resp.Items), nil
+	return convert.ItemProtosToEntities(resp.Items), nil
 }
 
 func packItems(items []*entity.ItemWithQuantity) []*entity.ItemWithQuantity {

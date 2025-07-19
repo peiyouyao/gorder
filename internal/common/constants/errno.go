@@ -2,9 +2,9 @@ package constants
 
 const (
 	ErrnoSuccess       = 0
-	ErrnoUnknown       = 1
-	ErrnoBindRequest   = 100
-	ErrnoInvalidParams = 200
+	ErrnoUnknown       = 404
+	ErrnoBindRequest   = 403
+	ErrnoInvalidParams = 401
 )
 
 var (

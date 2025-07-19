@@ -11,9 +11,9 @@ import (
 	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/peiyouyao/gorder/common/server"
 	"github.com/peiyouyao/gorder/common/tracing"
+	"github.com/peiyouyao/gorder/order/app"
 	"github.com/peiyouyao/gorder/order/infrastructure/consumer"
 	"github.com/peiyouyao/gorder/order/ports"
-	"github.com/peiyouyao/gorder/order/service"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -35,7 +35,7 @@ func main() {
 	}
 	defer shutdown(ctx)
 
-	application, cleanup := service.NewApplication(ctx)
+	application, cleanup := app.NewApplication(ctx)
 	defer cleanup()
 
 	deregisterFn, err := discovery.RegisterToConsul(ctx, serviceName)

@@ -3,8 +3,10 @@ package order
 import (
 	"errors"
 	"fmt"
+	"slices"
 
-	"github.com/peiyouyao/gorder/order/entity"
+	"github.com/peiyouyao/gorder/common/constants"
+	"github.com/peiyouyao/gorder/common/entity"
 	"github.com/stripe/stripe-go/v82"
 )
 
@@ -59,4 +61,38 @@ func (o *Order) IsPaid() error {
 		return nil
 	}
 	return fmt.Errorf("order status not paid, order id = %s, status = %s", o.ID, o.Status)
+}
+
+func (o *Order) UpdatePaymentLink(link string) error {
+	if link == "" {
+		return errors.New("cannot update empty paymentLink")
+	}
+	o.PaymentLink = link
+	return nil
+}
+
+func (o *Order) UpdateItems(items []*entity.Item) error {
+	o.Items = items
+	return nil
+}
+
+func (o *Order) UpdateStatus(to string) error {
+	if !o.isValidStatusTransition(to) {
+		return fmt.Errorf("cannot transit from '%s' to '%s'", o.Status, to)
+	}
+	o.Status = to
+	return nil
+}
+
+func (o *Order) isValidStatusTransition(to string) bool {
+	switch o.Status {
+	default:
+		return false
+	case constants.OrderStatusPending:
+		return slices.Contains([]string{constants.OrderStatusWaitingForPayment}, to)
+	case constants.OrderStatusWaitingForPayment:
+		return slices.Contains([]string{constants.OrderStatusPaid}, to)
+	case constants.OrderStatusPaid:
+		return slices.Contains([]string{constants.OrderStatusReady}, to)
+	}
 }

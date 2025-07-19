@@ -35,12 +35,15 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 		logrus.Warnf("fail to consume: queue=%s, err=%v", q.Name, err)
 	}
 
-	go func() {
-		for msg := range msgs {
-			c.handleMessage(ch, msg, q)
-		}
-	}()
-	select {}
+	// go func() {
+	// 	for msg := range msgs {
+	// 		c.handleMessage(ch, msg, q)
+	// 	}
+	// }()
+	// select {}
+	for msg := range msgs {
+		c.handleMessage(ch, msg, q)
+	}
 }
 
 func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Queue) {

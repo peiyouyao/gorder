@@ -5,8 +5,8 @@ import (
 	"time"
 
 	_ "github.com/peiyouyao/gorder/common/config"
+	"github.com/peiyouyao/gorder/common/entity"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
-	"github.com/peiyouyao/gorder/order/entity"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"

@@ -6,9 +6,11 @@ import (
 	"fmt"
 
 	"github.com/peiyouyao/gorder/common/broker"
+	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/peiyouyao/gorder/order/app"
 	"github.com/peiyouyao/gorder/order/app/command"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
+	"github.com/pkg/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
@@ -38,32 +40,39 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 		logrus.Fatal(err)
 	}
 
-	go func() {
-		for msg := range msgs {
-			c.handleMessage(ch, msg, q)
-		}
-	}()
-	select {} // block forever
+	// go func() {
+	// 	for msg := range msgs {
+	// 		c.handleMessage(ch, msg, q)
+	// 	}
+	// }()
+	// select {} // block forever
+	for msg := range msgs {
+		c.handleMessage(ch, msg, q)
+	}
 }
 
 func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Queue) {
-	ctx := broker.ExtractRabbitMQHeaders(context.Background(), msg.Headers)
-	t := otel.Tracer("rabbitmq")
-	_, span := t.Start(ctx, fmt.Sprintf("rabbitmq.%s.consume", q.Name))
+	tr := otel.Tracer("rabbitmq")
+	ctx, span := tr.Start(
+		broker.ExtractRabbitMQHeaders(context.Background(), msg.Headers),
+		fmt.Sprintf("rabbitmq.%s.consume", q.Name),
+	)
 	defer span.End()
 
 	var err error
 	defer func() {
 		if err != nil {
+			logging.Warnf(ctx, nil, "consume failed||from=%s||msg=%v||err=%v", q.Name, msg, err)
 			_ = msg.Nack(false, false)
 		} else {
+			logging.Infof(ctx, nil, "consume success")
 			_ = msg.Ack(false)
 		}
 	}()
 
 	o := &domain.Order{}
-	if err := json.Unmarshal(msg.Body, o); err != nil {
-		logrus.Infof("err unmarshal msg.Body into domain.Order, err=%v", err)
+	if err = json.Unmarshal(msg.Body, o); err != nil {
+		err = errors.Wrap(err, "err unmarshal msg.Body into domain.Order")
 		return
 	}
 
@@ -77,13 +86,12 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 		},
 	})
 	if err != nil {
-		logrus.Infof("error updating order, orderID = %s, err = %v", o.ID, err)
+		logging.Errorf(ctx, nil, "error updating order, orderID = %s, err = %v", o.ID, err)
 		if err = broker.HandleRetry(ctx, ch, &msg); err != nil {
-			logrus.Warnf("retry_error, error handling retry, messageID=%s, err=%v", msg.MessageId, err)
+			err = errors.Wrapf(err, "retry_error, error handling retry, messageID=%s, err=%v", msg.MessageId, err)
 		}
 		return
 	}
 
 	span.AddEvent("order.update")
-	logrus.Info("order consume paid even success")
 }
