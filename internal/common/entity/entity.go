@@ -19,9 +19,9 @@ func (it Item) validate() error {
 	if it.ID == "" {
 		invalidFields = append(invalidFields, "ID")
 	}
-	if it.Name == "" {
-		invalidFields = append(invalidFields, "Name")
-	}
+	// if it.Name == "" {
+	// 	invalidFields = append(invalidFields, "Name")
+	// }
 	if it.PriceID == "" {
 		invalidFields = append(invalidFields, "PriceID")
 	}

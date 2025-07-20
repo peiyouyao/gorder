@@ -13,13 +13,13 @@ import (
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
-// Using "logging.Infof, Warnf...""
-// Or add hook, using "logrus.Infof...""
+// Using "logging.Infof, Warnf..."
+// Or add hook, using "logrus.Infof..."
 
 func Init() {
 	setFormatter(logrus.StandardLogger())
 	logrus.SetLevel(logrus.DebugLevel)
-	setOutput(logrus.StandardLogger()) // Set output to file and rotate logs
+	// setOutput(logrus.StandardLogger()) // Set output to file and rotate logs
 	logrus.AddHook(&traceHook{})
 }
 
@@ -47,7 +47,7 @@ func setFormatter(logger *logrus.Logger) {
 // 配置日志输出到文件，并分割日志文件
 func setOutput(logger *logrus.Logger) {
 	var (
-		folder        = "./log/"     // 日志文件目录
+		folder        = "./tmp/log/" // 日志文件目录
 		logFilepath   = "logs.log"   // 普通日志文件名
 		errorFilepath = "errors.log" // 错误日志文件名
 	)
@@ -74,8 +74,8 @@ func setOutput(logger *logrus.Logger) {
 
 	// 创建普通日志轮转器
 	rotateLog, err := rotatelogs.New(
-		folder+"%Y%m%d."+logFilepath,             // ➡ 生成 20250719.logs.log 格式
-		rotatelogs.WithLinkName(logFilepath),     // ➡ 保留软链接 logs.log 指向当前日志
+		folder+"%Y%m%d."+logFilepath, // ➡ 生成 20250719.logs.log 格式
+		// rotatelogs.WithLinkName(logFilepath),     // ➡ 保留软链接 logs.log 指向当前日志
 		rotatelogs.WithMaxAge(7*24*time.Hour),    // 保留最近 7 天日志
 		rotatelogs.WithRotationTime(1*time.Hour), // 每小时分割一次日志
 	)
@@ -85,8 +85,8 @@ func setOutput(logger *logrus.Logger) {
 
 	// 创建错误日志轮转器
 	rotateError, err := rotatelogs.New(
-		folder+"%Y%m%d."+logFilepath,             // ➡ 生成 20250719.errors.log 格式
-		rotatelogs.WithLinkName(errorFilepath),   // ➡ 保留软链接 errors.log 指向当前错误日志
+		folder+"%Y%m%d."+logFilepath, // ➡ 生成 20250719.errors.log 格式
+		// rotatelogs.WithLinkName(errorFilepath),   // ➡ 保留软链接 errors.log 指向当前错误日志
 		rotatelogs.WithMaxAge(7*24*time.Hour),    // 保留最近 7 天日志
 		rotatelogs.WithRotationTime(1*time.Hour), // 每小时分割一次错误日志
 	)

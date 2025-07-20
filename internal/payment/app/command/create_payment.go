@@ -26,7 +26,6 @@ type createPaymentHandler struct {
 
 func (c createPaymentHandler) Handle(ctx context.Context, cmd CreatePayment) (link string, err error) {
 	defer logging.WhenCommandExecute(ctx, "CreatePaymentHandler", cmd, err)
-
 	if link, err = c.processor.CreatePaymentLink(ctx, cmd.Order); err != nil {
 		return
 	}
@@ -41,7 +40,6 @@ func (c createPaymentHandler) Handle(ctx context.Context, cmd CreatePayment) (li
 	if err != nil {
 		return
 	}
-
 	err = c.orderGRPC.UpdateOrder(ctx, convert.OrderEntityToProto(newOrder))
 	return link, err
 }

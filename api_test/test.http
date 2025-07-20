@@ -1,4 +1,4 @@
-### buy animebook jpy
+### buy animebook jpy (stock not enough)
 POST http://127.0.0.1:8282/api/customer/111/orders
 Content-Type: application/json
 
@@ -9,7 +9,7 @@ Content-Type: application/json
   ]
 }
 
-### buy cookie usd
+### buy cookie usd (data wrong)
 POST http://127.0.0.1:8282/api/customer/111/orders
 Content-Type: application/json
 

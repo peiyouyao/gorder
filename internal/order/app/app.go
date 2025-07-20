@@ -46,6 +46,7 @@ func NewApplication(ctx context.Context) (Application, func()) {
 		viper.GetString("rabbitmq.port"),
 	)
 	stockGRPC := grpc.NewStockGRPC(stockClient)
+
 	return newAppliction(ctx, stockGRPC, ch), func() {
 		_ = closeStockClient()
 		_ = ch.Close()
@@ -61,7 +62,10 @@ func newAppliction(
 	mongoCli := newMongoClient()
 	orderRepo := adapters.NewOrderRepositoryMongo(mongoCli)
 	logger := logrus.NewEntry(logrus.StandardLogger())
-	metrics := metrics.NoMetrics{}
+	metrics := metrics.NewPrometheusMetricsClient(&metrics.PrometheusMetricsClientConfig{
+		Host:        viper.GetString("order.metrics-addr"),
+		ServiceName: viper.GetString("order.service-name"),
+	})
 
 	return Application{
 		Commands: Commands{

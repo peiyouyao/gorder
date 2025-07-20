@@ -18,36 +18,36 @@ type response struct {
 	TraceID string `json:"trace_id"`
 }
 
-func (base *BaseResponse) Response(c *gin.Context, err error, data interface{}) {
+func (r *BaseResponse) Response(c *gin.Context, err error, data interface{}) {
 	if err != nil {
-		base.error(c, err)
+		r.error(c, err)
 	} else {
-		base.success(c, data)
+		r.success(c, data)
 	}
 }
 
-func (base *BaseResponse) success(c *gin.Context, data interface{}) {
+func (r *BaseResponse) success(c *gin.Context, data interface{}) {
 	errno, errmsg := errors.Output(nil)
-	r := response{
+	resp := response{
 		Errno:   errno,
 		Message: errmsg,
 		Data:    data,
 		TraceID: tracing.TraceID(c.Request.Context()),
 	}
-	c.JSON(http.StatusOK, r)
-	rJson, _ := json.Marshal(r)
+	c.JSON(http.StatusOK, resp)
+	rJson, _ := json.Marshal(resp)
 	c.Set("response", rJson)
 }
 
-func (base *BaseResponse) error(c *gin.Context, err error) {
+func (r *BaseResponse) error(c *gin.Context, err error) {
 	errno, errmsg := errors.Output(err)
-	r := response{
+	resp := response{
 		Errno:   errno,
 		Message: errmsg,
 		Data:    nil,
 		TraceID: tracing.TraceID(c.Request.Context()),
 	}
-	c.JSON(http.StatusOK, r)
-	rJson, _ := json.Marshal(r)
+	c.JSON(http.StatusOK, resp)
+	rJson, _ := json.Marshal(resp)
 	c.Set("response", rJson)
 }

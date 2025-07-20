@@ -52,23 +52,14 @@ func NewCheckIfItemsInStockHandler(
 }
 
 func (h checkIfItemsInStockHandler) Handle(ctx context.Context, query CheckIfItemsInStock) (res []*entity.Item, err error) {
+	var lkerr error
 	lockKey := getLockKey(query)
-	if err = lock(ctx, lockKey); err != nil {
+	if lkerr = lock(ctx, lockKey); lkerr != nil {
 		return nil, errors.Wrapf(err, "redis lock error||key=%s", lockKey)
 	}
 	defer func() {
-		f := logrus.Fields{
-			"query": query,
-			"res":   res,
-		}
-		if err != nil {
-			logging.Errorf(ctx, f, "checkIfItemsInStock error||err=%v", err)
-		} else {
-			logging.Infof(ctx, f, "checkIfItemsInStock success")
-		}
-
-		if err = unlock(ctx, lockKey); err != nil {
-			logging.Warnf(ctx, nil, "redis unlock error||err=%v", err)
+		if lkerr = unlock(ctx, lockKey); lkerr != nil {
+			logging.Warnf(ctx, nil, "redis unlock error||err=%v", lkerr)
 		}
 	}()
 
@@ -88,6 +79,16 @@ func (h checkIfItemsInStockHandler) Handle(ctx context.Context, query CheckIfIte
 
 	if err := h.checkStock(ctx, query.Items); err != nil {
 		return nil, err
+	}
+
+	f := logrus.Fields{
+		"query": query,
+		"res":   res,
+	}
+	if err != nil {
+		logging.Errorf(ctx, f, "checkIfItemsInStock error||err=%v", err)
+	} else {
+		logging.Infof(ctx, f, "checkIfItemsInStock success")
 	}
 	return res, nil
 }
@@ -117,10 +118,7 @@ func (h checkIfItemsInStockHandler) checkStock(ctx context.Context, queryItems [
 	if err != nil {
 		return err
 	}
-	idQuantityMap := make(map[string]int32)
-	for _, r := range records {
-		idQuantityMap[r.ID] += r.Quantity
-	}
+	idQuantityMap := h.tidyItems(records)
 
 	var (
 		ok       = true
@@ -140,30 +138,38 @@ func (h checkIfItemsInStockHandler) checkStock(ctx context.Context, queryItems [
 			}{ID: item.ID, Want: item.Quantity, Have: idQuantityMap[item.ID]})
 		}
 	}
-	if ok {
-		return h.stockRepo.UpdateStock(
-			ctx,
-			queryItems,
-			func(
-				ctx context.Context,
-				existing []*entity.ItemWithQuantity,
-				query []*entity.ItemWithQuantity,
-			) ([]*entity.ItemWithQuantity, error) {
-				var newItems []*entity.ItemWithQuantity
-				for _, e := range existing {
-					for _, q := range query {
-						if e.ID == q.ID {
-							itq, err := entity.NewValidItemWithQuantity(e.ID, e.Quantity-q.Quantity)
-							if err != nil {
-								return nil, err
-							}
-							newItems = append(newItems, itq)
+	if !ok {
+		return domain.ExceedStockError{FailedOn: failedOn}
+	}
+	return h.stockRepo.UpdateStock(
+		ctx,
+		queryItems,
+		func(
+			ctx context.Context,
+			existing []*entity.ItemWithQuantity,
+			query []*entity.ItemWithQuantity,
+		) ([]*entity.ItemWithQuantity, error) {
+			var newItems []*entity.ItemWithQuantity
+			for _, e := range existing {
+				for _, q := range query {
+					if e.ID == q.ID {
+						itq, err := entity.NewValidItemWithQuantity(e.ID, e.Quantity-q.Quantity)
+						if err != nil {
+							return nil, err
 						}
+						newItems = append(newItems, itq)
 					}
 				}
-				return newItems, nil
-			},
-		)
+			}
+			return newItems, nil
+		},
+	)
+}
+
+func (h checkIfItemsInStockHandler) tidyItems(items []*entity.ItemWithQuantity) (res map[string]int32) {
+	res = make(map[string]int32)
+	for _, it := range items {
+		res[it.ID] += it.Quantity
 	}
-	return domain.ExceedStockError{FailedOn: failedOn}
+	return
 }

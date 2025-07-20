@@ -41,10 +41,13 @@ func newApplication(
 ) Application {
 
 	logger := logrus.NewEntry(logrus.StandardLogger())
-	metricsClient := metrics.NoMetrics{}
+	metrics := metrics.NewPrometheusMetricsClient(&metrics.PrometheusMetricsClientConfig{
+		Host:        viper.GetString("payment.metrics-addr"),
+		ServiceName: viper.GetString("payment.service-name"),
+	})
 	return Application{
 		Commands: Commands{
-			CreatePayment: command.NewCreatePaymentHandler(processor, orderGRPC, logger, metricsClient),
+			CreatePayment: command.NewCreatePaymentHandler(processor, orderGRPC, logger, metrics),
 		},
 	}
 }

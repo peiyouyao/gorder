@@ -5,7 +5,6 @@ import (
 
 	"github.com/peiyouyao/gorder/common/genproto/orderpb"
 	"github.com/peiyouyao/gorder/common/genproto/stockpb"
-	"github.com/sirupsen/logrus"
 )
 
 type StockGRPC struct {
@@ -18,7 +17,6 @@ func NewStockGRPC(client stockpb.StockServiceClient) *StockGRPC {
 
 func (s StockGRPC) CheckIfItemsInStock(ctx context.Context, items []*orderpb.ItemWithQuantity) (*stockpb.CheckIfItemsInStockResponse, error) {
 	resp, err := s.client.CheckIfItemsInStock(ctx, &stockpb.CheckIfItemsInStockRequest{Items: items})
-	logrus.Info("stock_grpc resp", resp)
 	return resp, err
 }
 

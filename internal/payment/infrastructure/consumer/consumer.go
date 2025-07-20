@@ -35,12 +35,6 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 		logrus.Warnf("fail to consume: queue=%s, err=%v", q.Name, err)
 	}
 
-	// go func() {
-	// 	for msg := range msgs {
-	// 		c.handleMessage(ch, msg, q)
-	// 	}
-	// }()
-	// select {}
 	for msg := range msgs {
 		c.handleMessage(ch, msg, q)
 	}
@@ -69,7 +63,7 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 		return
 	}
 	if _, err = c.app.Commands.CreatePayment.Handle(ctx, command.CreatePayment{Order: o}); err != nil {
-		logrus.Infof("failed to create payment, err=%v", err)
+		logrus.Warnf("failed to create payment, err=%v", err)
 		if err = broker.HandleRetry(ctx, ch, &msg); err != nil {
 			logrus.Warnf("retry_error, error handling retry, messageID=%s, err=%v", msg.MessageId, err)
 		}

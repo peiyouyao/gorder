@@ -40,12 +40,6 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 		logrus.Fatal(err)
 	}
 
-	// go func() {
-	// 	for msg := range msgs {
-	// 		c.handleMessage(ch, msg, q)
-	// 	}
-	// }()
-	// select {} // block forever
 	for msg := range msgs {
 		c.handleMessage(ch, msg, q)
 	}

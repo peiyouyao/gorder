@@ -35,8 +35,10 @@ func (G GRPCServer) CheckIfItemsInStock(ctx context.Context, request *stockpb.Ch
 	_, span := tracing.Start(ctx, "CheckIfItemsInStock")
 	defer span.End()
 
-	items, err := G.app.Queries.CheckIfItemsInStock.Handle(ctx, query.CheckIfItemsInStock{
-		Items: convert.ItemWithQuantityProtosToEntities(request.Items)})
+	items, err := G.app.Queries.CheckIfItemsInStock.Handle(
+		ctx,
+		query.CheckIfItemsInStock{Items: convert.ItemWithQuantityProtosToEntities(request.Items)},
+	)
 	if err != nil {
 		return nil, status.Error(status.Code(err), err.Error())
 	}

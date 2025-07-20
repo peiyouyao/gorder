@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/peiyouyao/gorder/common/constants"
-	"github.com/peiyouyao/gorder/common/handler/errors"
+	myerrors "github.com/peiyouyao/gorder/common/handler/errors"
+
+	"errors"
 
 	"github.com/gin-gonic/gin"
 	client "github.com/peiyouyao/gorder/common/client/order"
@@ -17,8 +19,8 @@ import (
 )
 
 type HTTPServer struct {
-	common.BaseResponse
-	app app.Application
+	common.BaseResponse // 继承
+	app                 app.Application
 }
 
 func (s *HTTPServer) PostCustomerCustomerIdOrders(c *gin.Context, customerID string) {
@@ -32,11 +34,12 @@ func (s *HTTPServer) PostCustomerCustomerIdOrders(c *gin.Context, customerID str
 	}()
 
 	if err = c.ShouldBind(&req); err != nil {
-		err = errors.NewWithError(constants.ErrnoBindRequest, err)
+		err = myerrors.NewWithError(constants.ErrnoBindRequest, err)
 		return
 	}
-	if !s.validate(&req) {
-		err = errors.NewWithError(constants.ErrnoInvalidParams, err)
+
+	if err = s.validate(&req); err != nil {
+		err = myerrors.NewWithError(constants.ErrnoInvalidParams, err)
 		return
 	}
 	r, err := s.app.Commands.CreateOrder.Handle(c.Request.Context(), command.CreateOrder{
@@ -79,11 +82,14 @@ func (s *HTTPServer) GetCustomerCustomerIdOrdersOrderId(c *gin.Context, customer
 	}
 }
 
-func (s *HTTPServer) validate(req *client.CreateOrderRequest) bool {
+func (s *HTTPServer) validate(req *client.CreateOrderRequest) error {
+	if req == nil || req.Items == nil {
+		return errors.New("nil req or nil items")
+	}
 	for _, iq := range req.Items {
 		if iq.Quantity <= 0 {
-			return false
+			return errors.New("negative quantity")
 		}
 	}
-	return true
+	return nil
 }
