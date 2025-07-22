@@ -42,7 +42,6 @@
     const getOrder = async() => {
       const res = await fetch(`/api/customer/${customer_id}/orders/${order_id}`);
       const data = await res.json();
-      console.log("data = ", data)
 
       /*
       {
@@ -53,7 +52,6 @@
         }
       }
       */
-      console.log(data)
       if (data.data.order.status === 'waiting_for_payment') {
         order.status = '等待支付...';
         document.getElementById('orderStatus').innerText = order.status;

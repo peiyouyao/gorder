@@ -2,10 +2,12 @@ package adapters
 
 import (
 	"context"
+	"time"
+
+	"maps"
 
 	_ "github.com/peiyouyao/gorder/common/config"
 	"github.com/peiyouyao/gorder/common/entity"
-	"github.com/peiyouyao/gorder/common/logging"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -40,7 +42,7 @@ func (r *OrderRepositoryMongo) Create(ctx context.Context, order *domain.Order) 
 	fs := logrus.Fields{
 		"order": order,
 	}
-	dlog := logging.LoggingWithCost(ctx, "mongo_create", fs)
+	dlog := logMongoDB(ctx, "mongo_create", fs)
 	defer dlog(created, err)
 
 	write := r.marshalToModel(order)
@@ -57,7 +59,7 @@ func (r *OrderRepositoryMongo) Get(ctx context.Context, id, customerID string) (
 	fs := logrus.Fields{
 		"customer_id": customerID,
 	}
-	dlog := logging.LoggingWithCost(ctx, "mongo_get", fs)
+	dlog := logMongoDB(ctx, "mongo_get", fs)
 	defer dlog(got, err)
 
 	read := &orderModel{}
@@ -79,7 +81,7 @@ func (r *OrderRepositoryMongo) Update(
 	fs := logrus.Fields{
 		"order": order,
 	}
-	dlog := logging.LoggingWithCost(ctx, "mongo_update", fs)
+	dlog := logMongoDB(ctx, "mongo_update", fs)
 	defer dlog(updateRes, err)
 
 	if order == nil {
@@ -150,4 +152,24 @@ func (r *OrderRepositoryMongo) unmarshal(read *orderModel) *domain.Order {
 		PaymentLink: read.PaymentLink,
 		Items:       read.Items,
 	}
+}
+
+func logMongoDB(ctx context.Context, method string, fields logrus.Fields) (dlog func(resp any, err error)) {
+	start := time.Now()
+
+	// 拷贝字段，避免外部修改污染
+	fs := make(logrus.Fields, len(fields))
+	maps.Copy(fs, fields)
+
+	dlog = func(res any, err error) {
+		fs["mongo_res"] = res
+		fs["mongo_time_cost"] = time.Since(start)
+		if err == nil {
+			logrus.WithContext(ctx).WithFields(fs).Infof("%s_success", method)
+		} else {
+			fs["mongo_err"] = err.Error()
+			logrus.WithContext(ctx).WithFields(fs).Errorf("%s_fail", method)
+		}
+	}
+	return
 }

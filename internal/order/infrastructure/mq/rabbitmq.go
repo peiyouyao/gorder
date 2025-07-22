@@ -15,7 +15,7 @@ type RabbitMQEventPublisher struct {
 }
 
 func (p *RabbitMQEventPublisher) Publish(ctx context.Context, event domain.DomainEvent) error {
-	return broker.PublishEvent(ctx, broker.PublishEventReq{
+	return broker.PublishEvent(ctx, &broker.PublishEventReq{
 		Channel:  p.Channel,
 		Routing:  broker.Direct,
 		Queue:    event.Dest,
@@ -25,7 +25,7 @@ func (p *RabbitMQEventPublisher) Publish(ctx context.Context, event domain.Domai
 }
 
 func (p *RabbitMQEventPublisher) Broadcast(ctx context.Context, event domain.DomainEvent) error {
-	return broker.PublishEvent(ctx, broker.PublishEventReq{
+	return broker.PublishEvent(ctx, &broker.PublishEventReq{
 		Channel:  p.Channel,
 		Routing:  broker.Fanout,
 		Queue:    event.Dest,

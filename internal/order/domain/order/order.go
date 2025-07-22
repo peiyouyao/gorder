@@ -50,9 +50,11 @@ func NewPendingOrder(customerID string, items []*entity.Item) (*Order, error) {
 	}
 
 	return &Order{
-		CustomerID: customerID,
-		Status:     "pending",
-		Items:      items,
+		ID:          "",
+		CustomerID:  customerID,
+		Status:      constants.OrderStatusPending,
+		Items:       items,
+		PaymentLink: "",
 	}, nil
 }
 

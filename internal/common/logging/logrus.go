@@ -16,7 +16,7 @@ import (
 
 func Init() {
 	logger := logrus.StandardLogger()
-	logger.SetLevel(logrus.DebugLevel)
+	logger.SetLevel(logrus.TraceLevel)
 	logger.SetReportCaller(true) // 打开 caller 信息
 	logger.AddHook(&traceHook{})
 	if isLocalEnv() {

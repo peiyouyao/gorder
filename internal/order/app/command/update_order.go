@@ -38,13 +38,16 @@ func NewUpdateOrderHandler(
 
 func (u updateOrderHandler) Handle(ctx context.Context, cmd UpdateOrder) (interface{}, error) {
 	if cmd.UpdateFn == nil {
-		logrus.Warn("updateOrderHandler got nil UpdateFn, order=%v", cmd.Order)
-		cmd.UpdateFn = func(ctx context.Context, order *domain.Order) (*domain.Order, error) {
-			return order, nil
+		logrus.Warnf("nil_UpdateFn || order=%v", cmd.Order)
+		cmd.UpdateFn = func(ctx context.Context, o *domain.Order) (*domain.Order, error) {
+			return o, nil
 		}
 	}
+	logrus.Debugf("orderRepo.Update_start || order=%v", *cmd.Order)
 	if err := u.orderRepo.Update(ctx, cmd.Order, cmd.UpdateFn); err != nil {
+		logrus.Debugf("orderRepo.Update_fail || err=%v", err)
 		return nil, err
 	}
+	logrus.Debugf("orderRepo.Update_success")
 	return nil, nil
 }

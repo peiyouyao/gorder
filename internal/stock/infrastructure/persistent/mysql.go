@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/peiyouyao/gorder/common/util"
 	"github.com/peiyouyao/gorder/stock/infrastructure/persistent/builder"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -59,7 +60,7 @@ func NewMySQLWithDB(db *gorm.DB) *MySQL {
 }
 
 func (d MySQL) GetByID(ctx context.Context, query *builder.Stock) (res *StockModel, err error) {
-	_, dlog := LogMySQL(ctx, "GetByID", query)
+	_, dlog := logMySQL(ctx, "GetByID", query)
 	defer dlog(res, &err)
 
 	err = query.Fill(d.db.WithContext(ctx)).First(&res).Error
@@ -70,7 +71,7 @@ func (d MySQL) GetByID(ctx context.Context, query *builder.Stock) (res *StockMod
 }
 
 func (d MySQL) GetBatchByID(ctx context.Context, query *builder.Stock) (res []StockModel, err error) {
-	_, dlog := LogMySQL(ctx, "GetBatchByID", query)
+	_, dlog := logMySQL(ctx, "GetBatchByID", query)
 	defer dlog(res, &err)
 
 	err = query.Fill(d.db.WithContext(ctx)).Find(&res).Error
@@ -82,7 +83,7 @@ func (d MySQL) GetBatchByID(ctx context.Context, query *builder.Stock) (res []St
 
 func (d MySQL) Update(ctx context.Context, tx *gorm.DB, cond *builder.Stock, update map[string]any) (err error) {
 	var returning StockModel
-	_, dlog := LogMySQL(ctx, "UpdateBatch", cond)
+	_, dlog := logMySQL(ctx, "UpdateBatch", cond)
 	defer dlog(returning, &err)
 
 	res := cond.Fill(d.useTransaction(tx).WithContext(ctx).Model(&returning).Clauses(clause.Returning{})).Updates(update)
@@ -91,7 +92,7 @@ func (d MySQL) Update(ctx context.Context, tx *gorm.DB, cond *builder.Stock, upd
 
 func (d MySQL) Create(ctx context.Context, tx *gorm.DB, create *StockModel) (err error) {
 	var returning StockModel
-	_, dlog := LogMySQL(ctx, "Create", create)
+	_, dlog := logMySQL(ctx, "Create", create)
 	defer dlog(returning, &err)
 	return d.useTransaction(tx).WithContext(ctx).Model(&returning).Clauses(clause.Returning{}).Create(create).Error
 }
@@ -105,4 +106,24 @@ func (d *MySQL) useTransaction(tx *gorm.DB) *gorm.DB {
 		return d.db
 	}
 	return tx
+}
+
+func logMySQL(ctx context.Context, cmd string, args ...any) (logrus.Fields, func(any, *error)) {
+	fields := logrus.Fields{
+		"mysql_cmd":  cmd,
+		"mysql_args": util.FormatArgs(args),
+	}
+	start := time.Now()
+	return fields, func(resp any, err *error) {
+		level, msg := logrus.InfoLevel, "mysql_success"
+		fields["mysql_cost"] = time.Since(start).Milliseconds()
+		fields["mysql_resp"] = resp
+
+		if err != nil && (*err != nil) {
+			level, msg = logrus.ErrorLevel, "mysql_error"
+			fields["mysql_err"] = (*err).Error()
+		}
+
+		logrus.WithContext(ctx).WithFields(fields).Log(level, msg)
+	}
 }

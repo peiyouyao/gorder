@@ -1,4 +1,4 @@
-package main
+package ports
 
 import (
 	"encoding/json"
@@ -18,6 +18,9 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
+/*
+暴露.../api/webhook 接口, 供stripe调用(POST)
+*/
 type PaymentHandler struct {
 	channel *amqp.Channel
 }
@@ -47,7 +50,7 @@ func (h *PaymentHandler) handleWebhook(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxBodyBytes)
 	payload, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		logrus.Infof("Error reading request body: %v\n", err)
+		logrus.Infof("read_request_body_fail || err=%v", err)
 		c.JSON(http.StatusServiceUnavailable, err.Error())
 		return
 	}
@@ -56,24 +59,22 @@ func (h *PaymentHandler) handleWebhook(c *gin.Context) {
 		viper.GetString("ENDPOINT_STRIPE_SECRET"))
 
 	if err != nil {
-		logrus.Infof("Error verifying webhook signature: %v\n", err)
+		logrus.Infof("verifying_webhook_signature_fail || err=%v", err)
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	switch event.Type {
 	case stripe.EventTypeCheckoutSessionCompleted:
+		logrus.Debug("user_paid")
 		var session stripe.CheckoutSession
 		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
-			logrus.Infof("error unmarshal event.data.raw into session, err = %v", err)
+			logrus.Infof("unmarshal_event.Data.Raw_fail || err = %v", err)
 			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
 		if session.PaymentStatus == stripe.CheckoutSessionPaymentStatusPaid {
-			var items []*entity.Item
-			_ = json.Unmarshal([]byte(session.Metadata["items"]), &items)
-
 			tr := otel.Tracer("rabbitmq")
 			ctx, span := tr.Start(
 				c.Request.Context(),
@@ -81,18 +82,30 @@ func (h *PaymentHandler) handleWebhook(c *gin.Context) {
 			)
 			defer span.End()
 
-			err = broker.PublishEvent(ctx, broker.PublishEventReq{
-				Channel: h.channel,
-				Routing: broker.Fanout,
-				Queue:   "",
-				Body: entity.NewOrder(
-					session.Metadata["orderID"],
-					session.Metadata["customerID"],
-					constants.OrderStatusPaid,
-					session.Metadata["paymentLink"],
-					items,
-				),
+			var items []*entity.Item
+			_ = json.Unmarshal([]byte(session.Metadata["items"]), &items)
+
+			o := entity.NewOrder(
+				session.Metadata["orderID"],
+				session.Metadata["customerID"],
+				constants.OrderStatusPaid,
+				session.Metadata["paymentLink"], // 没有取到
+				items,
+			)
+			logrus.Debugf("receive_user_paid || order=%v", o)
+
+			logrus.Debug("broker.PublishEvent")
+			err = broker.PublishEvent(ctx, &broker.PublishEventReq{
+				Channel:  h.channel,
+				Routing:  broker.Fanout,
+				Exchange: broker.EventOrderPaid,
+				Queue:    "",
+				Body:     *o,
 			})
+			if err != nil {
+				logrus.Debug("broker.PublishEvent_fail")
+			}
+			logrus.Debug("broker.PublishEvent_success")
 		}
 	}
 	c.JSON(http.StatusOK, nil)

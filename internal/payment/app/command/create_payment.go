@@ -27,18 +27,26 @@ func (c createPaymentHandler) Handle(ctx context.Context, cmd CreatePayment) (li
 	if link, err = c.processor.CreatePaymentLink(ctx, cmd.Order); err != nil {
 		return
 	}
+	logrus.Debug("create_link_from_stripe_success")
 
 	newOrder, err := entity.NewValidOrder(
 		cmd.Order.ID,
 		cmd.Order.CustomerID,
-		constants.OrderStatusWaitingForPayment,
+		constants.OrderStatusWaitingForPayment, // 生成了 link, 改状态为 waiting_for_pay
 		link,
 		cmd.Order.Items,
 	)
 	if err != nil {
 		return
 	}
-	err = c.orderGRPC.UpdateOrder(ctx, convert.OrderEntityToProto(newOrder))
+	logrus.Debugf("NewValidOrder_success || newOrder=%v", *newOrder)
+
+	logrus.Debug("orderGRPC.UpdateOrder_start")
+	err = c.orderGRPC.UpdateOrder(ctx, convert.OrderEntityToProto(newOrder)) // 发送 grpc 给 order
+	if err != nil {
+		logrus.Debug("orderGRPC.UpdateOrder_fail")
+	}
+	logrus.Debug("orderGRPC.UpdateOrder_success")
 	return link, err
 }
 

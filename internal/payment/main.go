@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"io"
 
+	"github.com/gin-gonic/gin"
 	"github.com/peiyouyao/gorder/common/broker"
 	_ "github.com/peiyouyao/gorder/common/config"
 	"github.com/peiyouyao/gorder/common/logging"
@@ -10,11 +12,14 @@ import (
 	"github.com/peiyouyao/gorder/common/tracing"
 	"github.com/peiyouyao/gorder/payment/app"
 	"github.com/peiyouyao/gorder/payment/infrastructure/consumer"
+	"github.com/peiyouyao/gorder/payment/ports"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 func init() {
+	gin.DefaultWriter = io.Discard
+	gin.DefaultErrorWriter = io.Discard
 	logging.Init()
 }
 
@@ -46,6 +51,6 @@ func main() {
 
 	go consumer.NewConsumer(application).Listen(ch)
 
-	paymentHandler := NewPaymentHandler(ch)
+	paymentHandler := ports.NewPaymentHandler(ch)
 	server.RunHTTPServer(serviceName, paymentHandler.RegisterRoutes)
 }

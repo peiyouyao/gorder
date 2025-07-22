@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
-	"github.com/peiyouyao/gorder/common/logging"
+	"github.com/peiyouyao/gorder/common/util"
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 )
@@ -30,8 +31,8 @@ type PublishEventReq struct {
 	Body     any
 }
 
-func PublishEvent(ctx context.Context, p PublishEventReq) (err error) {
-	_, dlog := logging.WhenEventPublish(ctx, p)
+func PublishEvent(ctx context.Context, p *PublishEventReq) (err error) {
+	_, dlog := logPublishing(ctx, p)
 	defer dlog(nil, &err)
 
 	if err = check(p); err != nil {
@@ -49,7 +50,7 @@ func PublishEvent(ctx context.Context, p PublishEventReq) (err error) {
 	return nil
 }
 
-func direct(ctx context.Context, p PublishEventReq) (err error) {
+func direct(ctx context.Context, p *PublishEventReq) (err error) {
 	if _, err = p.Channel.QueueDeclare(p.Queue, true, false, false, false, nil); err != nil {
 		return
 	}
@@ -67,7 +68,7 @@ func direct(ctx context.Context, p PublishEventReq) (err error) {
 	})
 }
 
-func fout(ctx context.Context, p PublishEventReq) (err error) {
+func fout(ctx context.Context, p *PublishEventReq) (err error) {
 	jsonBody, err := json.Marshal(p.Body)
 	if err != nil {
 		return
@@ -93,9 +94,32 @@ func doPublish(ctx context.Context, ch *amqp091.Channel, exchange, key string, m
 	return nil
 }
 
-func check(p PublishEventReq) error {
+func check(p *PublishEventReq) error {
 	if p.Channel == nil {
 		return errors.New("nil channel")
 	}
 	return nil
+}
+
+func logPublishing(ctx context.Context, p *PublishEventReq) (logrus.Fields, func(any, *error)) {
+	fields := logrus.Fields{
+		"channel":  p.Channel,
+		"queue":    p.Queue,
+		"routing":  p.Routing,
+		"exchange": p.Exchange,
+		"body":     util.MarshalStringWithoutErr(p.Body),
+	}
+	start := time.Now()
+	return fields, func(resp any, err *error) {
+		level, msg := logrus.InfoLevel, "_mq_publish_success"
+		fields["publish_time_cost"] = time.Since(start).Milliseconds()
+		fields["publish_resp"] = resp
+
+		if err != nil && (*err != nil) {
+			level, msg = logrus.ErrorLevel, "_mq_publish_failed"
+			fields["publish_error"] = (*err).Error()
+		}
+
+		logrus.WithContext(ctx).WithFields(fields).Log(level, msg)
+	}
 }

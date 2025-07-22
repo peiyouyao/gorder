@@ -9,6 +9,7 @@ import (
 	"github.com/peiyouyao/gorder/order/app/command"
 	"github.com/peiyouyao/gorder/order/app/query"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
+	"github.com/sirupsen/logrus"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -53,6 +54,7 @@ func (s *GRPCServer) GetOrder(ctx context.Context, request *orderpb.GetOrderRequ
 }
 
 func (s *GRPCServer) UpdateOrder(ctx context.Context, request *orderpb.Order) (_ *emptypb.Empty, err error) {
+	logrus.Debug("GRPCServer_UpdateOrder")
 	order, err := domain.NewOrder(
 		request.ID,
 		request.CustomerID,
@@ -64,12 +66,18 @@ func (s *GRPCServer) UpdateOrder(ctx context.Context, request *orderpb.Order) (_
 		err = status.Error(codes.Internal, err.Error())
 		return
 	}
+	logrus.Debugf("domain.NewOrder || order=%v", *order)
 
+	logrus.Debug("app.Commands.UpdateOrder.Handle_start")
 	_, err = s.app.Commands.UpdateOrder.Handle(ctx, command.UpdateOrder{
 		Order: order,
-		UpdateFn: func(ctx context.Context, order *domain.Order) (*domain.Order, error) {
-			return order, nil
+		UpdateFn: func(ctx context.Context, o *domain.Order) (*domain.Order, error) {
+			return o, nil
 		},
 	})
+	if err != nil {
+		logrus.Debug("app.Commands.UpdateOrder.Handle_fail")
+	}
+	logrus.Debug("app.Commands.UpdateOrder.Handle_success")
 	return
 }

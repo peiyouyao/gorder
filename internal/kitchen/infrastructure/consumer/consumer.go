@@ -21,6 +21,9 @@ type OrderService interface {
 	UpdateOrder(ctx context.Context, request *orderpb.Order) error
 }
 
+/*
+消费 mq 中 order.paid 消息
+*/
 type Consumer struct {
 	orderGRPC OrderService
 }
@@ -50,6 +53,8 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 }
 
 func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Queue) {
+	logrus.Infof("receive_msg || from=%s || msg_id=%s", q.Name, msg.MessageId)
+
 	tr := otel.Tracer("rabbitmq")
 	ctx, span := tr.Start(
 		broker.ExtractRabbitMQHeaders(context.Background(), msg.Headers),
@@ -75,19 +80,21 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 
 	o := &entity.Order{}
 	if err = json.Unmarshal(msg.Body, o); err != nil {
-		err = errors.Wrap(err, "error unmarshal msg.body into order")
+		logrus.Infof("unmarshal_fail || err=%s", err.Error())
 		return
 	}
+
 	if o.Status != constants.OrderStatusPaid {
 		err = errors.New("order not paid, can not cook")
 		return
 	}
 	cook(ctx, o)
-	span.AddEvent(fmt.Sprintf("order_cooked: %v", o))
+
+	span.AddEvent(fmt.Sprintf("order_cooked.%v", o))
 	if err := c.orderGRPC.UpdateOrder(ctx, &orderpb.Order{
 		ID:          o.ID,
-		CustomerID:  o.Status,
-		Status:      "ready",
+		CustomerID:  o.CustomerID,
+		Status:      constants.OrderStatusReady,
 		Items:       convert.ItemEntitiesToProtos(o.Items),
 		PaymentLink: o.PaymentLink,
 	}); err != nil {
@@ -100,12 +107,13 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 		logrus.WithContext(ctx).WithFields(fs).Error("update_order_fail")
 		// retry
 		if err = broker.HandleRetry(ctx, ch, &msg); err != nil {
-			err = errors.Wrapf(err, "error retry||message_id=%v||err=%v", msg.MessageId, err)
+			logrus.Warnf("retry_fail || message_id=%s || err=%v", msg.MessageId, err)
 		}
 		return
 	}
 
 	span.AddEvent("kitchen.order.finished.updated")
+	logrus.Info("consume_success")
 }
 
 func cook(ctx context.Context, o *entity.Order) {

@@ -9,12 +9,14 @@ import (
 	"github.com/peiyouyao/gorder/order/app"
 	"github.com/peiyouyao/gorder/order/app/command"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
-	"github.com/pkg/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 )
 
+/*
+消费 mq 中 order.paid 消息
+*/
 type Consumer struct {
 	app app.Application
 }
@@ -44,7 +46,10 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 	}
 }
 
-func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Queue) {
+func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Queue) { // order的consume只执行更新订单
+	logrus.Infof("receive_order.paid || from=%s || msg_id=%s", q.Name, msg.MessageId)
+	logrus.Debug("receive_order.paid")
+
 	tr := otel.Tracer("rabbitmq")
 	ctx, span := tr.Start(
 		broker.ExtractRabbitMQHeaders(context.Background(), msg.Headers),
@@ -70,10 +75,12 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 
 	o := &domain.Order{}
 	if err = json.Unmarshal(msg.Body, o); err != nil {
-		err = errors.Wrap(err, "err unmarshal msg.Body into order")
+		logrus.Warnf("unmarshal_fail || err=%s", err.Error())
 		return
 	}
+	logrus.Debugf("paid_order=%v", *o)
 
+	logrus.Debug("app.Commands.UpdateOrder.Handle_start")
 	_, err = c.app.Commands.UpdateOrder.Handle(ctx, command.UpdateOrder{
 		Order: o,
 		UpdateFn: func(ctx context.Context, order *domain.Order) (*domain.Order, error) {
@@ -93,10 +100,11 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 		logrus.WithContext(ctx).WithFields(fs).Error("update_order_fail")
 		// retry
 		if err = broker.HandleRetry(ctx, ch, &msg); err != nil {
-			err = errors.Wrapf(err, "retry_error || messageID=%s || err=%v", msg.MessageId, err)
+			logrus.Warnf("retry_fail || message_id=%s || err=%v", msg.MessageId, err)
 		}
 		return
 	}
 
 	span.AddEvent("order.update")
+	logrus.Info("consume_success")
 }

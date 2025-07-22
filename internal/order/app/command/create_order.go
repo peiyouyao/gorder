@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/peiyouyao/gorder/common/broker"
@@ -82,25 +81,28 @@ func (c createOrderHandler) Handle(ctx context.Context, cmd CreateOrder) (*Creat
 		return nil, err
 	}
 
+	logrus.Debug("orderRepo.Create_start")
 	o, err := c.orderRepo.Create(ctx, pendingOrder)
 	if err != nil {
+		logrus.Debugf("orderRepo.Create_fail || err=%v", err)
 		return nil, err
 	}
+	logrus.Debugf("orderRepo.Create_success || order=%v", *o)
 
-	marshalledOrder, err := json.Marshal(o)
-	if err != nil {
-		return nil, err
+	logrus.Debug("broker.PublishEvent_start")
+	r := &broker.PublishEventReq{
+		Channel:  c.channel,
+		Routing:  broker.Direct,
+		Queue:    q.Name,
+		Exchange: "",
+		Body:     *o,
 	}
-	header := broker.InjectRabbitMQHeaders(ctx)
-	err = c.channel.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
-		ContentType:  "application/json",
-		DeliveryMode: amqp.Persistent,
-		Body:         marshalledOrder,
-		Headers:      header,
-	})
+	err = broker.PublishEvent(ctx, r)
 	if err != nil {
+		logrus.Debugf("broker.PublishEvent_fail || err=%v", err)
 		return nil, errors.Wrap(err, "failed to publish order created event")
 	}
+	logrus.Debugf("broker.PublishEvent_success || broker.PublishEventReq=%v", *r)
 
 	return &CreateOrderResult{OrderID: o.ID}, nil
 }

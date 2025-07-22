@@ -1,4 +1,4 @@
-package main
+package ports
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ import (
 
 type HTTPServer struct {
 	common.BaseResponse // 继承
-	app                 app.Application
+	App                 app.Application
 }
 
 func (s *HTTPServer) PostCustomerCustomerIdOrders(c *gin.Context, customerID string) {
@@ -42,7 +42,7 @@ func (s *HTTPServer) PostCustomerCustomerIdOrders(c *gin.Context, customerID str
 		err = myerrors.NewWithError(constants.ErrnoInvalidParams, err)
 		return
 	}
-	r, err := s.app.Commands.CreateOrder.Handle(c.Request.Context(), command.CreateOrder{
+	r, err := s.App.Commands.CreateOrder.Handle(c.Request.Context(), command.CreateOrder{
 		CustomerID: req.CustomerId,
 		Items:      convert.ItemWithQuantityClientsToEntities(req.Items),
 	})
@@ -66,7 +66,7 @@ func (s *HTTPServer) GetCustomerCustomerIdOrdersOrderId(c *gin.Context, customer
 		s.Response(c, err, resp)
 	}()
 
-	o, err := s.app.Queries.GetCustomerOrder.Handle(c.Request.Context(), query.GetCustomerOrder{
+	o, err := s.App.Queries.GetCustomerOrder.Handle(c.Request.Context(), query.GetCustomerOrder{
 		CustomerID: customerID,
 		OrderID:    orderID,
 	})

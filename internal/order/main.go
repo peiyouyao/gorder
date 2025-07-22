@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 
 	"github.com/gin-gonic/gin"
 	"github.com/peiyouyao/gorder/common/broker"
@@ -20,6 +21,8 @@ import (
 )
 
 func init() {
+	gin.DefaultWriter = io.Discard
+	gin.DefaultErrorWriter = io.Discard
 	logging.Init()
 }
 
@@ -65,7 +68,7 @@ func main() {
 
 	server.RunHTTPServer(serviceName, func(router *gin.Engine) {
 		router.StaticFile("/success", "../../public/success.html")
-		ports.RegisterHandlersWithOptions(router, &HTTPServer{app: application}, ports.GinServerOptions{
+		ports.RegisterHandlersWithOptions(router, &ports.HTTPServer{App: application}, ports.GinServerOptions{
 			BaseURL:      "/api",
 			Middlewares:  nil,
 			ErrorHandler: nil,
