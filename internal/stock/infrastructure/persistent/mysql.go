@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/peiyouyao/gorder/stock/infrastructure/persistent/builder"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -60,7 +59,7 @@ func NewMySQLWithDB(db *gorm.DB) *MySQL {
 }
 
 func (d MySQL) GetByID(ctx context.Context, query *builder.Stock) (res *StockModel, err error) {
-	_, dlog := logging.WhenMySQL(ctx, "GetByID", query)
+	_, dlog := LogMySQL(ctx, "GetByID", query)
 	defer dlog(res, &err)
 
 	err = query.Fill(d.db.WithContext(ctx)).First(&res).Error
@@ -71,7 +70,7 @@ func (d MySQL) GetByID(ctx context.Context, query *builder.Stock) (res *StockMod
 }
 
 func (d MySQL) GetBatchByID(ctx context.Context, query *builder.Stock) (res []StockModel, err error) {
-	_, dlog := logging.WhenMySQL(ctx, "GetBatchByID", query)
+	_, dlog := LogMySQL(ctx, "GetBatchByID", query)
 	defer dlog(res, &err)
 
 	err = query.Fill(d.db.WithContext(ctx)).Find(&res).Error
@@ -83,7 +82,7 @@ func (d MySQL) GetBatchByID(ctx context.Context, query *builder.Stock) (res []St
 
 func (d MySQL) Update(ctx context.Context, tx *gorm.DB, cond *builder.Stock, update map[string]any) (err error) {
 	var returning StockModel
-	_, dlog := logging.WhenMySQL(ctx, "UpdateBatch", cond)
+	_, dlog := LogMySQL(ctx, "UpdateBatch", cond)
 	defer dlog(returning, &err)
 
 	res := cond.Fill(d.useTransaction(tx).WithContext(ctx).Model(&returning).Clauses(clause.Returning{})).Updates(update)
@@ -92,7 +91,7 @@ func (d MySQL) Update(ctx context.Context, tx *gorm.DB, cond *builder.Stock, upd
 
 func (d MySQL) Create(ctx context.Context, tx *gorm.DB, create *StockModel) (err error) {
 	var returning StockModel
-	_, dlog := logging.WhenMySQL(ctx, "Create", create)
+	_, dlog := LogMySQL(ctx, "Create", create)
 	defer dlog(returning, &err)
 	return d.useTransaction(tx).WithContext(ctx).Model(&returning).Clauses(clause.Returning{}).Create(create).Error
 }

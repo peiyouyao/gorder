@@ -11,7 +11,6 @@ import (
 	"github.com/peiyouyao/gorder/common/convert"
 	"github.com/peiyouyao/gorder/common/entity"
 	"github.com/peiyouyao/gorder/common/genproto/orderpb"
-	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/pkg/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
@@ -42,7 +41,7 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 
 	msgs, err := ch.Consume(q.Name, "", false, false, false, false, nil)
 	if err != nil {
-		logrus.Warnf("fail to consume: queue=%s, err=%v", q.Name, err)
+		logrus.Fatal(err)
 	}
 
 	for msg := range msgs {
@@ -61,10 +60,15 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 	var err error
 	defer func() {
 		if err != nil {
-			logging.Warnf(ctx, nil, "consume failed||from=%s||msg=%v||err=%v", q.Name, msg, err)
+			fs := logrus.Fields{
+				"q_name": q.Name,
+				"q_msg":  msg,
+				"err":    err.Error(),
+			}
+			logrus.WithContext(ctx).WithFields(fs).Warn("mq_consume_failed")
 			_ = msg.Nack(false, false)
 		} else {
-			logging.Infof(ctx, nil, "%s", "consume success")
+			logrus.WithContext(ctx).Info("mq_consume_success")
 			_ = msg.Ack(false)
 		}
 	}()
@@ -87,7 +91,13 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 		Items:       convert.ItemEntitiesToProtos(o.Items),
 		PaymentLink: o.PaymentLink,
 	}); err != nil {
-		logging.Errorf(ctx, nil, "error updating order||orderID=%s||err=%v", o.ID, err)
+		fs := logrus.Fields{
+			"order_id": o.ID,
+			"q_name":   q.Name,
+			"q_msg":    msg,
+			"err":      err.Error(),
+		}
+		logrus.WithContext(ctx).WithFields(fs).Error("update_order_fail")
 		// retry
 		if err = broker.HandleRetry(ctx, ch, &msg); err != nil {
 			err = errors.Wrapf(err, "error retry||message_id=%v||err=%v", msg.MessageId, err)
@@ -99,7 +109,7 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 }
 
 func cook(ctx context.Context, o *entity.Order) {
-	logging.Infof(ctx, nil, "cooking order: %s", o.ID)
+	logrus.WithContext(ctx).Infof("cooking || order_id=%s", o.ID)
 	time.Sleep(5 * time.Second)
-	logging.Infof(ctx, nil, "done order: %s", o.ID)
+	logrus.WithContext(ctx).Infof("cooking_done || order_id=%s", o.ID)
 }

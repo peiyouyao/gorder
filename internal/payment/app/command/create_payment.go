@@ -7,7 +7,6 @@ import (
 	"github.com/peiyouyao/gorder/common/convert"
 	"github.com/peiyouyao/gorder/common/decorator"
 	"github.com/peiyouyao/gorder/common/entity"
-	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/peiyouyao/gorder/common/metrics"
 	"github.com/peiyouyao/gorder/payment/domain"
 	"github.com/sirupsen/logrus"
@@ -25,7 +24,6 @@ type createPaymentHandler struct {
 }
 
 func (c createPaymentHandler) Handle(ctx context.Context, cmd CreatePayment) (link string, err error) {
-	defer logging.WhenCommandExecute(ctx, "CreatePaymentHandler", cmd, err)
 	if link, err = c.processor.CreatePaymentLink(ctx, cmd.Order); err != nil {
 		return
 	}

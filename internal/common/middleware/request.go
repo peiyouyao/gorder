@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,17 +20,17 @@ func RequestLog(l *logrus.Entry) gin.HandlerFunc {
 
 func requestOut(c *gin.Context, l *logrus.Entry) {
 	rsp, _ := c.Get("response")
-	start, _ := c.Get("request_start")
+	start, _ := c.Get("start")
 	startTime := start.(time.Time)
 
 	l.WithContext(c.Request.Context()).WithFields(logrus.Fields{
-		logging.Cost:     time.Since(startTime).Milliseconds(),
-		logging.Response: rsp,
-	}).Info("_request_out")
+		"time_cost": time.Since(startTime).Milliseconds(),
+		"resp":      rsp,
+	}).Info("request_out")
 }
 
 func requestIn(c *gin.Context, l *logrus.Entry) {
-	c.Set("request_start", time.Now())
+	c.Set("start", time.Now())
 
 	body := c.Request.Body
 	bodyBytes, _ := io.ReadAll(body)
@@ -41,9 +40,9 @@ func requestIn(c *gin.Context, l *logrus.Entry) {
 	_ = json.Compact(&compactJson, bodyBytes)
 
 	l.WithContext(c.Request.Context()).WithFields(logrus.Fields{
-		"start":      time.Now().Unix(),
-		logging.Args: compactJson.String(),
-		"from":       c.RemoteIP(),
-		"uri":        c.Request.URL,
-	}).Info("_request_in")
+		"start": time.Now().Unix(),
+		"args":  compactJson.String(),
+		"from":  c.RemoteIP(),
+		"uri":   c.Request.URL,
+	}).Info("request_in")
 }

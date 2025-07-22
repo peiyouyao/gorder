@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/peiyouyao/gorder/common/broker"
-	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/peiyouyao/gorder/order/app"
 	"github.com/peiyouyao/gorder/order/app/command"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
@@ -56,17 +55,22 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 	var err error
 	defer func() {
 		if err != nil {
-			logging.Warnf(ctx, nil, "consume failed||from=%s||msg=%v||err=%v", q.Name, msg, err)
+			fs := logrus.Fields{
+				"q_name": q.Name,
+				"q_msg":  msg,
+				"err":    err.Error(),
+			}
+			logrus.WithContext(ctx).WithFields(fs).Warn("mq_consume_failed")
 			_ = msg.Nack(false, false)
 		} else {
-			logging.Infof(ctx, nil, "consume success")
+			logrus.WithContext(ctx).Info("mq_consume_success")
 			_ = msg.Ack(false)
 		}
 	}()
 
 	o := &domain.Order{}
 	if err = json.Unmarshal(msg.Body, o); err != nil {
-		err = errors.Wrap(err, "err unmarshal msg.Body into domain.Order")
+		err = errors.Wrap(err, "err unmarshal msg.Body into order")
 		return
 	}
 
@@ -80,9 +84,16 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 		},
 	})
 	if err != nil {
-		logging.Errorf(ctx, nil, "error updating order, orderID = %s, err = %v", o.ID, err)
+		fs := logrus.Fields{
+			"order_id": o.ID,
+			"q_name":   q.Name,
+			"q_msg":    msg,
+			"err":      err.Error(),
+		}
+		logrus.WithContext(ctx).WithFields(fs).Error("update_order_fail")
+		// retry
 		if err = broker.HandleRetry(ctx, ch, &msg); err != nil {
-			err = errors.Wrapf(err, "retry_error, error handling retry, messageID=%s, err=%v", msg.MessageId, err)
+			err = errors.Wrapf(err, "retry_error || messageID=%s || err=%v", msg.MessageId, err)
 		}
 		return
 	}

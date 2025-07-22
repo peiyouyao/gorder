@@ -10,7 +10,6 @@ import (
 	"github.com/peiyouyao/gorder/common/decorator"
 	"github.com/peiyouyao/gorder/common/entity"
 	"github.com/peiyouyao/gorder/common/handler/redis"
-	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/peiyouyao/gorder/common/metrics"
 	domain "github.com/peiyouyao/gorder/stock/domain/stock"
 	"github.com/peiyouyao/gorder/stock/infrastructure/intergration"
@@ -59,14 +58,14 @@ func (h checkIfItemsInStockHandler) Handle(ctx context.Context, query CheckIfIte
 	}
 	defer func() {
 		if lkerr = unlock(ctx, lockKey); lkerr != nil {
-			logging.Warnf(ctx, nil, "redis unlock error||err=%v", lkerr)
+			logrus.WithContext(ctx).Warnf("redis_unlock_fail || err=%v", lkerr)
 		}
 	}()
 
 	for _, it := range query.Items {
 		priceID, err := h.stripeAPI.GetPriceByProductID(ctx, it.ID)
 		if err != nil {
-			logging.Warnf(ctx, nil, "GetPriceByProductID error, item ID = %s, err = %v", it.ID, err)
+			logrus.WithContext(ctx).Warnf("GetPriceByProductID_from_stripe_fail || item_id=%s || err=%v", it.ID, err)
 			return nil, err
 		}
 
@@ -81,14 +80,14 @@ func (h checkIfItemsInStockHandler) Handle(ctx context.Context, query CheckIfIte
 		return nil, err
 	}
 
-	f := logrus.Fields{
+	fs := logrus.Fields{
 		"query": query,
 		"res":   res,
 	}
 	if err != nil {
-		logging.Errorf(ctx, f, "checkIfItemsInStock error||err=%v", err)
+		logrus.WithContext(ctx).WithFields(fs).Error("checkIfItemsInStock_fail || err=%v", err)
 	} else {
-		logging.Infof(ctx, f, "checkIfItemsInStock success")
+		logrus.WithContext(ctx).WithFields(fs).Info("checkIfItemsInStock_success")
 	}
 	return res, nil
 }

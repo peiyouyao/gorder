@@ -6,6 +6,7 @@ import (
 	"time"
 
 	_ "github.com/peiyouyao/gorder/common/config"
+	"github.com/peiyouyao/gorder/common/logging"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -72,7 +73,12 @@ func createDLX(ch *amqp.Channel) (err error) {
 }
 
 // confirm consumer **receive** a message
-func HandleRetry(ctx context.Context, ch *amqp.Channel, d *amqp.Delivery) error {
+func HandleRetry(ctx context.Context, ch *amqp.Channel, d *amqp.Delivery) (err error) {
+	fs := logrus.Fields{
+		"q_msg_id": d.MessageId,
+	}
+	dlog := logging.LoggingWithCost(ctx, "mq_retry", fs)
+	defer dlog(nil, err)
 	if d.Headers == nil {
 		d.Headers = amqp.Table{}
 	}
@@ -92,12 +98,14 @@ func HandleRetry(ctx context.Context, ch *amqp.Channel, d *amqp.Delivery) error 
 
 	if retryCnt >= maxRetryCnt {
 		logrus.Infof("moveing message %s to dlq", d.MessageId)
-		return ch.PublishWithContext(ctx, "", dlq, false, false, publishing)
+		err = ch.PublishWithContext(ctx, "", dlq, false, false, publishing)
+		return
 	}
 
 	logrus.Infof("retrying message %s, count=%d", d.MessageId, retryCnt)
 	time.Sleep(time.Second * time.Duration(retryCnt))
-	return ch.PublishWithContext(ctx, d.Exchange, d.RoutingKey, false, false, publishing)
+	err = ch.PublishWithContext(ctx, d.Exchange, d.RoutingKey, false, false, publishing)
+	return
 }
 
 // impl propagation.TextMapCarrier

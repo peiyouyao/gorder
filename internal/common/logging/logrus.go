@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -141,31 +140,4 @@ func (t traceHook) Fire(entry *logrus.Entry) error {
 func isLocalEnv() bool {
 	isLocal, _ := strconv.ParseBool(os.Getenv("LOCAL_ENV"))
 	return isLocal
-}
-
-// 带上下文的日志输出函数（支持字段和格式化）
-func logf(ctx context.Context, level logrus.Level, fields logrus.Fields, format string, args ...any) {
-	logrus.WithContext(ctx).WithFields(fields).Logf(level, format, args...)
-}
-
-// 带耗时记录的 Info 日志
-func InfofWithCost(ctx context.Context, fields logrus.Fields, start time.Time, format string, args ...any) {
-	fields[Cost] = time.Since(start).Milliseconds()
-	Infof(ctx, fields, format, args...)
-}
-
-func Infof(ctx context.Context, fields logrus.Fields, format string, args ...any) {
-	logrus.WithContext(ctx).WithFields(fields).Infof(format, args...)
-}
-
-func Errorf(ctx context.Context, fields logrus.Fields, format string, args ...any) {
-	logrus.WithContext(ctx).WithFields(fields).Errorf(format, args...)
-}
-
-func Warnf(ctx context.Context, fields logrus.Fields, format string, args ...any) {
-	logrus.WithContext(ctx).WithFields(fields).Warnf(format, args...)
-}
-
-func Panicf(ctx context.Context, fields logrus.Fields, format string, args ...any) {
-	logrus.WithContext(ctx).WithFields(fields).Panicf(format, args...)
 }

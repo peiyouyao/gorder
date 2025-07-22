@@ -83,7 +83,11 @@ func fout(ctx context.Context, p PublishEventReq) (err error) {
 
 func doPublish(ctx context.Context, ch *amqp091.Channel, exchange, key string, mandatory, immediate bool, msg amqp091.Publishing) error {
 	if err := ch.PublishWithContext(ctx, exchange, key, mandatory, immediate, msg); err != nil {
-		logging.Warnf(ctx, nil, "_publish_event_failed||exchange=%s||key=%s||msg=%v", exchange, key, msg)
+		logrus.WithContext(ctx).WithFields(logrus.Fields{
+			"exchange": exchange,
+			"key":      key,
+			"q_msg":    msg,
+		}).Warn("publish_event_failed")
 		return err
 	}
 	return nil

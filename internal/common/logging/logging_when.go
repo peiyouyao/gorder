@@ -2,122 +2,56 @@ package logging
 
 import (
 	"context"
-	"encoding/json"
-	"strings"
 	"time"
 
+	"github.com/peiyouyao/gorder/common/util"
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	Method   = "method"
-	Args     = "args"
-	Cost     = "cost_ms"
-	Response = "response"
-	Error    = "error"
-)
-
-type ArgFormatter interface {
-	FormatArg() (string, error)
-}
-
-func WhenMySQL(ctx context.Context, method string, args ...any) (logrus.Fields, func(any, *error)) {
-	fields := logrus.Fields{
-		Method: method,
-		Args:   formatArgs(args),
-	}
+func LoggingWithCost(ctx context.Context, method string, fields logrus.Fields) (dlog func(resp any, err error)) {
 	start := time.Now()
-	return fields, func(resp any, err *error) {
-		level, msg := logrus.InfoLevel, "mysql_success"
-		fields[Cost] = time.Since(start).Milliseconds()
-		fields[Response] = resp
 
-		if err != nil && (*err != nil) {
-			level, msg = logrus.ErrorLevel, "mysql_error"
-			fields[Error] = (*err).Error()
+	// 拷贝字段，避免外部修改污染
+	fs := make(logrus.Fields, len(fields))
+	for k, v := range fields {
+		fs[k] = v
+	}
+
+	dlog = func(res any, err error) {
+		if rec := recover(); rec != nil {
+			fs["panic"] = rec
+			fs["time_cost"] = time.Since(start)
+			logrus.WithContext(ctx).WithFields(fs).Fatalf("%s_panic", method)
+			panic(rec) // 继续抛出 panic
 		}
 
-		logf(ctx, level, fields, "%s", msg)
-	}
-}
-
-func WhenCommandExecute(ctx context.Context, commandName string, cmd any, err error) {
-	fields := logrus.Fields{
-		"cmd": cmd,
-	}
-	if err == nil {
-		logf(ctx, logrus.InfoLevel, fields, "%s_command_success", commandName)
-	} else {
-		logf(ctx, logrus.ErrorLevel, fields, "%s_command_failed", commandName)
-	}
-}
-
-func WhenRequest(ctx context.Context, method string, args ...any) (logrus.Fields, func(any, *error)) {
-	fields := logrus.Fields{
-		Method: method,
-		Args:   formatArgs(args),
-	}
-	start := time.Now()
-	return fields, func(resp any, err *error) {
-		level, msg := logrus.InfoLevel, "_request_success"
-		fields[Cost] = time.Since(start).Milliseconds()
-		fields[Response] = resp
-
-		if err != nil && (*err != nil) {
-			level, msg = logrus.ErrorLevel, "_request_failed"
-			fields[Error] = (*err).Error()
+		fs["res"] = res
+		fs["time_cost"] = time.Since(start)
+		if err == nil {
+			logrus.WithContext(ctx).WithFields(fs).Infof("%s_success", method)
+		} else {
+			fs["err"] = err.Error()
+			logrus.WithContext(ctx).WithFields(fs).Errorf("%s_fail", method)
 		}
-
-		logf(ctx, level, fields, "%s", msg)
 	}
+	return
 }
 
 func WhenEventPublish(ctx context.Context, args ...any) (logrus.Fields, func(any, *error)) {
 	fields := logrus.Fields{
-		Args: formatArgs(args),
+		"args": util.FormatArgs(args),
 	}
 	start := time.Now()
 	return fields, func(resp any, err *error) {
 		level, msg := logrus.InfoLevel, "_mq_publish_success"
-		fields[Cost] = time.Since(start).Milliseconds()
-		fields[Response] = resp
+		fields["publish_time_cost"] = time.Since(start).Milliseconds()
+		fields["publish_resp"] = resp
 
 		if err != nil && (*err != nil) {
 			level, msg = logrus.ErrorLevel, "_mq_publish_failed"
-			fields[Error] = (*err).Error()
+			fields["publish_error"] = (*err).Error()
 		}
 
-		logf(ctx, level, fields, "%s", msg)
+		logrus.WithContext(ctx).WithFields(fields).Log(level, msg)
 	}
-}
-
-func formatArgs(args []any) string {
-	var item []string
-	for _, arg := range args {
-		item = append(item, formatArg(arg))
-	}
-	return strings.Join(item, "||")
-}
-
-func formatArg(arg any) string {
-	var (
-		str string
-		err error
-	)
-	defer func() {
-		if err != nil {
-			str = "unsupported type in formatMySQLArg||err=" + err.Error()
-		}
-	}()
-	switch v := arg.(type) {
-	default:
-		bs, err := json.Marshal(v)
-		if err != nil {
-			return "unsupported type in formatMySQLArg||err=" + err.Error()
-		}
-		str = string(bs)
-	case ArgFormatter:
-		str, err = v.FormatArg()
-	}
-	return str
 }

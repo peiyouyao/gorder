@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/peiyouyao/gorder/common/logging"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,15 +17,16 @@ type queryLoggingDecorator[Q, R any] struct {
 
 func (d queryLoggingDecorator[Q, R]) Handle(ctx context.Context, query Q) (res R, err error) {
 	body, _ := json.Marshal(query)
-	fields := logrus.Fields{
-		"query":      actionName(query),
-		"query_boby": string(body),
+	fs := logrus.Fields{
+		"query": actionName(query),
+		"body":  string(body),
 	}
 	defer func() {
 		if err == nil {
-			logging.Infof(ctx, fields, "%s", "query success")
+			logrus.WithContext(ctx).WithFields(fs).Info("query_success")
 		} else {
-			logging.Errorf(ctx, fields, "fail to exec query||err=%v", err)
+			fs["query_err"] = err.Error()
+			logrus.WithContext(ctx).WithFields(fs).Error("query_fail")
 		}
 	}()
 	res, err = d.handler.Handle(ctx, query)
@@ -41,15 +41,16 @@ type commandLoggingDecorator[C, R any] struct {
 
 func (d commandLoggingDecorator[C, R]) Handle(ctx context.Context, cmd C) (res R, err error) {
 	body, _ := json.Marshal(cmd)
-	fields := logrus.Fields{
-		"command":      actionName(cmd),
-		"command_boby": string(body),
+	fs := logrus.Fields{
+		"command": actionName(cmd),
+		"body":    string(body),
 	}
 	defer func() {
 		if err == nil {
-			logging.Infof(ctx, fields, "%s", "cmd success")
+			logrus.WithContext(ctx).WithFields(fs).Info("command_success")
 		} else {
-			logging.Errorf(ctx, fields, "fail to exec cmd||err=%v", err)
+			fs["command_err"] = err.Error()
+			logrus.WithContext(ctx).WithFields(fs).Error("command_fail")
 		}
 	}()
 	res, err = d.handler.Handle(ctx, cmd)

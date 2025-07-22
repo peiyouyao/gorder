@@ -15,13 +15,13 @@ func GRPCUnaryInterceptor(
 	handler grpc.UnaryHandler,
 ) (resp any, err error) {
 	fields := logrus.Fields{
-		Args: req,
+		"grpc_req": req,
 	}
 	defer func() {
-		fields[Response] = resp
+		fields["grpc_resp"] = resp
 		if err != nil {
-			fields[Error] = err.Error()
-			logf(ctx, logrus.ErrorLevel, fields, "%s", "_grpc_request_out")
+			fields["grpc_err"] = err.Error()
+			logrus.WithContext(ctx).WithFields(fields).Error("grpc_request_out")
 		}
 	}()
 
@@ -29,6 +29,6 @@ func GRPCUnaryInterceptor(
 		fields["grpc_metadata"] = md
 	}
 
-	logf(ctx, logrus.InfoLevel, fields, "%s", "_grpc_request_in")
+	logrus.WithContext(ctx).WithFields(fields).Info("grpc_request_in")
 	return handler(ctx, req)
 }

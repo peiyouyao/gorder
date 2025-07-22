@@ -2,10 +2,10 @@ package adapters
 
 import (
 	"context"
-	"time"
 
 	_ "github.com/peiyouyao/gorder/common/config"
 	"github.com/peiyouyao/gorder/common/entity"
+	"github.com/peiyouyao/gorder/common/logging"
 	domain "github.com/peiyouyao/gorder/order/domain/order"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -37,7 +37,11 @@ func NewOrderRepositoryMongo(db *mongo.Client) *OrderRepositoryMongo {
 }
 
 func (r *OrderRepositoryMongo) Create(ctx context.Context, order *domain.Order) (created *domain.Order, err error) {
-	defer r.logWithTag("create", err, created)
+	fs := logrus.Fields{
+		"order": order,
+	}
+	dlog := logging.LoggingWithCost(ctx, "mongo_create", fs)
+	defer dlog(created, err)
 
 	write := r.marshalToModel(order)
 	res, err := r.collection().InsertOne(ctx, write)
@@ -50,7 +54,11 @@ func (r *OrderRepositoryMongo) Create(ctx context.Context, order *domain.Order) 
 }
 
 func (r *OrderRepositoryMongo) Get(ctx context.Context, id, customerID string) (got *domain.Order, err error) {
-	defer r.logWithTag("get", err, got)
+	fs := logrus.Fields{
+		"customer_id": customerID,
+	}
+	dlog := logging.LoggingWithCost(ctx, "mongo_get", fs)
+	defer dlog(got, err)
 
 	read := &orderModel{}
 	mongoID, _ := primitive.ObjectIDFromHex(id)
@@ -67,6 +75,13 @@ func (r *OrderRepositoryMongo) Update(
 	ctx context.Context, order *domain.Order,
 	updateFn func(context.Context, *domain.Order) (*domain.Order, error),
 ) (err error) {
+	var updateRes *mongo.UpdateResult
+	fs := logrus.Fields{
+		"order": order,
+	}
+	dlog := logging.LoggingWithCost(ctx, "mongo_update", fs)
+	defer dlog(updateRes, err)
+
 	if order == nil {
 		panic("nil order")
 	}
@@ -100,7 +115,7 @@ func (r *OrderRepositoryMongo) Update(
 
 	mongoID, _ := primitive.ObjectIDFromHex(oldOrder.ID)
 
-	res, err := r.collection().UpdateOne(
+	updateRes, err = r.collection().UpdateOne(
 		ctx,
 		bson.M{"_id": mongoID, "customer_id": oldOrder.CustomerID}, // can't add condition: `"id": mongoID"`, because id need mongoID.Hex()
 		bson.M{"$set": bson.M{
@@ -108,11 +123,6 @@ func (r *OrderRepositoryMongo) Update(
 			"payment_link": updated.PaymentLink,
 		}},
 	)
-	if err != nil {
-		return
-	}
-	logrus.Info(res)
-	r.logWithTag("update", err, res)
 	return
 }
 
@@ -139,18 +149,5 @@ func (r *OrderRepositoryMongo) unmarshal(read *orderModel) *domain.Order {
 		Status:      read.Status,
 		PaymentLink: read.PaymentLink,
 		Items:       read.Items,
-	}
-}
-
-func (r *OrderRepositoryMongo) logWithTag(tag string, err error, result interface{}) {
-	l := logrus.WithFields(logrus.Fields{
-		"timestamp": time.Now().Unix(),
-		"err":       err,
-		"result":    result,
-	})
-	if err != nil {
-		l.Infof("order_repo_mongo_%s_fail", tag)
-	} else {
-		l.Infof("order_repo_mongo_%s_success", tag)
 	}
 }

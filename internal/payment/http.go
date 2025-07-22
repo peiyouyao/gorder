@@ -10,7 +10,6 @@ import (
 	"github.com/peiyouyao/gorder/common/broker"
 	"github.com/peiyouyao/gorder/common/constants"
 	"github.com/peiyouyao/gorder/common/entity"
-	"github.com/peiyouyao/gorder/common/logging"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -33,14 +32,14 @@ func (h *PaymentHandler) RegisterRoutes(c *gin.Engine) {
 }
 
 func (h *PaymentHandler) handleWebhook(c *gin.Context) {
-	logging.Infof(c.Request.Context(), nil, "receive webhook from stripe")
+	logrus.WithContext(c.Request.Context()).Info("receive_webhook_from_stripe")
 
 	var err error
 	defer func() {
 		if err != nil {
-			logging.Warnf(c.Request.Context(), nil, "handleWebhook err=%v", err)
+			logrus.WithContext(c.Request.Context()).Warnf("handle_webhook_fail || err=%s", err.Error())
 		} else {
-			logging.Infof(c.Request.Context(), nil, "handleWebhook success")
+			logrus.WithContext(c.Request.Context()).Info("handle_webhook_success")
 		}
 	}()
 
