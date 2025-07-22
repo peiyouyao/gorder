@@ -1,0 +1,58 @@
+### buy animebook jpy (stock not enough)
+POST http://127.0.0.1:8282/api/customer/111/orders
+Content-Type: application/json
+
+{
+  "customer_id": "111",
+  "items": [
+    {"id": "prod_SSx2PQ18YrYpMz", "quantity": 3 }
+  ]
+}
+
+### buy cookie usd (data wrong)
+POST http://127.0.0.1:8282/api/customer/111/orders
+Content-Type: application/json
+
+{
+  "customer_id": "111",
+  "items": [
+    {"id": "prod_SSwz4STCQmCbUn", "quantity": -1 }
+  ]
+}
+
+### buy fries euro
+POST http://127.0.0.1:8282/api/customer/111/orders
+Content-Type: application/json
+
+{
+  "customer_id": "111",
+  "items": [
+    {"id": "prod_SSGOnM6DXikQ7y", "quantity": 1 }
+  ]
+}
+
+### buy shit eruo
+POST http://127.0.0.1:8282/api/customer/111/orders
+Content-Type: application/json
+
+{
+  "customer_id": "111",
+  "items": [
+    {"id": "prod_SYcvt7D1E8CIFK", "quantity": 1 }
+  ]
+}
+
+### buy fries and shit
+POST http://127.0.0.1:8282/api/customer/111/orders
+Content-Type: application/json
+
+{
+  "customer_id": "111",
+  "items": [
+    {"id": "prod_SSGOnM6DXikQ7y", "quantity": 3 },
+    {"id": "prod_SYcvt7D1E8CIFK", "quantity": 5 }
+  ]
+}
+
+###
+GET http://127.0.0.1:8282/api/customer/111/orders/687e4c4c13be1486dd6a8d67

@@ -1,12 +1,12 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -47,6 +47,6 @@ func getRelativePathFromCaller() (relPath string, err error) {
 	}
 	_, here, _, _ := runtime.Caller(0)
 	relPath, err = filepath.Rel(callerPwd, filepath.Dir(here))
-	fmt.Printf("caller from: %s, here: %s, relpath: %s", callerPwd, here, relPath)
+	logrus.Infof("caller from: %s, here: %s, relpath: %s", callerPwd, here, relPath)
 	return
 }
