@@ -15,7 +15,7 @@ import (
 )
 
 /*
-消费 mq 中 order.paid 消息
+消费 mq 中 order.paid 消息, 更新 order状态为 paid
 */
 type Consumer struct {
 	app app.Application
@@ -47,8 +47,11 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 }
 
 func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Queue) { // order的consume只执行更新订单
-	logrus.Infof("receive_order.paid || from=%s || msg_id=%s", q.Name, msg.MessageId)
-	logrus.Debug("receive_order.paid")
+	logrus.WithFields(logrus.Fields{
+		"from_q": q.Name,
+		"msg_id": msg.MessageId,
+	}).Info("Receive order.paid msg")
+	logrus.Trace("Receive order.paid")
 
 	tr := otel.Tracer("rabbitmq")
 	ctx, span := tr.Start(
@@ -65,10 +68,10 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 				"q_msg":  msg,
 				"err":    err.Error(),
 			}
-			logrus.WithContext(ctx).WithFields(fs).Warn("mq_consume_failed")
+			logrus.WithContext(ctx).WithFields(fs).Warn("MQ consume fail")
 			_ = msg.Nack(false, false)
 		} else {
-			logrus.WithContext(ctx).Info("mq_consume_success")
+			logrus.WithContext(ctx).Info("MQ consume ok")
 			_ = msg.Ack(false)
 		}
 	}()
@@ -78,9 +81,9 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 		logrus.Warnf("unmarshal_fail || err=%s", err.Error())
 		return
 	}
-	logrus.Debugf("paid_order=%v", *o)
+	logrus.Tracef("paid.order=%v", *o)
 
-	logrus.Debug("app.Commands.UpdateOrder.Handle_start")
+	logrus.Trace("app.Commands.UpdateOrder.Handle start")
 	_, err = c.app.Commands.UpdateOrder.Handle(ctx, command.UpdateOrder{
 		Order: o,
 		UpdateFn: func(ctx context.Context, order *domain.Order) (*domain.Order, error) {
@@ -97,14 +100,17 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 			"q_msg":    msg,
 			"err":      err.Error(),
 		}
-		logrus.WithContext(ctx).WithFields(fs).Error("update_order_fail")
+		logrus.WithContext(ctx).WithFields(fs).Error("Update order fail")
 		// retry
 		if err = broker.HandleRetry(ctx, ch, &msg); err != nil {
-			logrus.Warnf("retry_fail || message_id=%s || err=%v", msg.MessageId, err)
+			logrus.WithFields(logrus.Fields{
+				"msg_id": msg.MessageId,
+				"err":    err.Error(),
+			}).Warn("Retry fail")
 		}
 		return
 	}
 
 	span.AddEvent("order.update")
-	logrus.Info("consume_success")
+	logrus.Info("Consume ok")
 }

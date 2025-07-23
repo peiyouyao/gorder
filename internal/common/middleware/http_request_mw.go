@@ -26,7 +26,7 @@ func HTTPRequestLog(l *logrus.Entry) gin.HandlerFunc {
 			"query":      query,
 			"client_ip":  clientIP,
 			"user_agent": userAgent,
-		}).Info("http_request_in")
+		}).Info("HTTP request in")
 
 		// 恢复 panic，避免程序崩溃
 		defer func() {
@@ -38,7 +38,7 @@ func HTTPRequestLog(l *logrus.Entry) gin.HandlerFunc {
 					"client_ip": clientIP,
 					"error":     rec,
 					"stack":     string(debug.Stack()),
-				}).Error("request_panic")
+				}).Error("HTTP request panic")
 				// 继续抛出 panic，让 Gin 的 Recover 中间件处理
 				panic(rec)
 			}
@@ -62,11 +62,11 @@ func HTTPRequestLog(l *logrus.Entry) gin.HandlerFunc {
 			"latency_ms":  latency.Milliseconds(),
 		})
 
-		out := "http_request_out"
+		out := "HTTP request out"
 		if statusCode >= 500 {
-			entry.Error(out + "_server_error")
+			entry.Error(out + " with server error")
 		} else if statusCode >= 400 {
-			entry.Warn(out + "_client_error")
+			entry.Warn(out + "with client error")
 		} else {
 			entry.Info(out)
 		}

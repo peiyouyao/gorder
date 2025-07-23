@@ -43,7 +43,7 @@ func (p *PrometheusMetricsClient) initPrometheus(cfg *PrometheusMetricsClientCon
 	// export
 	http.Handle("/metrics", promhttp.HandlerFor(p.registry, promhttp.HandlerOpts{}))
 	go func() {
-		logrus.Fatalf("failed to start prometheus metrics endpoint, err=%v", http.ListenAndServe(cfg.Host, nil))
+		logrus.Fatalf("Failed to start prometheus metrics endpoint err=%v", http.ListenAndServe(cfg.Host, nil))
 	}()
 }
 

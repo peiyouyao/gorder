@@ -54,7 +54,7 @@ func (s *GRPCServer) GetOrder(ctx context.Context, request *orderpb.GetOrderRequ
 }
 
 func (s *GRPCServer) UpdateOrder(ctx context.Context, request *orderpb.Order) (_ *emptypb.Empty, err error) {
-	logrus.Debug("GRPCServer_UpdateOrder")
+	logrus.Trace("GRPCServer.UpdateOrder")
 	order, err := domain.NewOrder(
 		request.ID,
 		request.CustomerID,
@@ -66,9 +66,9 @@ func (s *GRPCServer) UpdateOrder(ctx context.Context, request *orderpb.Order) (_
 		err = status.Error(codes.Internal, err.Error())
 		return
 	}
-	logrus.Debugf("domain.NewOrder || order=%v", *order)
+	logrus.Tracef("domain.NewOrder order=%v", *order)
 
-	logrus.Debug("app.Commands.UpdateOrder.Handle_start")
+	logrus.Trace("app.Commands.UpdateOrder.Handle start")
 	_, err = s.app.Commands.UpdateOrder.Handle(ctx, command.UpdateOrder{
 		Order: order,
 		UpdateFn: func(ctx context.Context, o *domain.Order) (*domain.Order, error) {
@@ -76,8 +76,8 @@ func (s *GRPCServer) UpdateOrder(ctx context.Context, request *orderpb.Order) (_
 		},
 	})
 	if err != nil {
-		logrus.Debug("app.Commands.UpdateOrder.Handle_fail")
+		logrus.Trace("app.Commands.UpdateOrder.Handle fail")
 	}
-	logrus.Debug("app.Commands.UpdateOrder.Handle_success")
+	logrus.Trace("app.Commands.UpdateOrder.Handle ok")
 	return
 }

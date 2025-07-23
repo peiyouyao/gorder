@@ -20,9 +20,9 @@ func SetNX(ctx context.Context, client *redis.Client, key, value string, ttl tim
 			"cost":  time.Since(now).Milliseconds(),
 		})
 		if err == nil {
-			l.Info("redis_setnx")
+			l.Info("Redis setnx ok")
 		} else {
-			l.Warn("redis_setnx_fail")
+			l.Warn("Redis setnx fail")
 		}
 	}()
 
@@ -43,9 +43,9 @@ func Del(ctx context.Context, client *redis.Client, key string) (err error) {
 			"cost":  time.Since(now).Milliseconds(),
 		})
 		if err == nil {
-			l.Info("redis_del")
+			l.Info("Redis delete ok")
 		} else {
-			l.Warn("redis_del_fail")
+			l.Warn("Redis delete fail")
 		}
 	}()
 

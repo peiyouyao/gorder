@@ -26,7 +26,7 @@ func NewStockGRPCClient(ctx context.Context) (client stockpb.StockServiceClient,
 		return nil, func() error { return nil }, err
 	}
 	if grpcAddr == "" {
-		logrus.Warn("empty grpc addr for stock grpc")
+		logrus.Warn("Empty grpc addr for stock grpc")
 	}
 
 	opts := grpcDialOpts()
@@ -47,7 +47,7 @@ func NewOrderGRPCClient(ctx context.Context) (client orderpb.OrderServiceClient,
 		return nil, func() error { return nil }, err
 	}
 	if grpcAddr == "" {
-		logrus.Warn("empty grpc addr for order grpc")
+		logrus.Warn("Empty grpc addr for order grpc")
 	}
 
 	opts := grpcDialOpts()
@@ -66,13 +66,13 @@ func grpcDialOpts() []grpc.DialOption {
 }
 
 func waitForOrderGRPCClinet(timeout time.Duration) bool {
-	logrus.Infof("waiting for order grpc client, timeout: %v seconds", timeout.Seconds())
+	logrus.WithField("timeout", timeout.Seconds()).Info("Waiting for order grpc client")
 	return waitFor(viper.GetString("order.grpc-addr"), timeout)
 
 }
 
 func waitForStockGRPCClinet(timeout time.Duration) bool {
-	logrus.Infof("waiting for stock grpc client, timeout: %v seconds", timeout.Seconds())
+	logrus.WithField("timeout", timeout.Seconds()).Info("Waiting for stock grpc client")
 	return waitFor(viper.GetString("stock.grpc-addr"), timeout)
 }
 

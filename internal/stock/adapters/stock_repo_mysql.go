@@ -51,7 +51,7 @@ func (m StockRepositoryMySQL) UpdateStock(
 	return m.db.StartTransaction(func(tx *gorm.DB) (err error) {
 		defer func() {
 			if err != nil {
-				logrus.Warnf("transaction failed, err = %v", err)
+				logrus.Warnf("Transaction fail err = %v", err)
 			}
 		}()
 		err = m.updateWithPessimisticLock(ctx, tx, data, updateFn)

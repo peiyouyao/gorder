@@ -81,15 +81,15 @@ func (c createOrderHandler) Handle(ctx context.Context, cmd CreateOrder) (*Creat
 		return nil, err
 	}
 
-	logrus.Debug("orderRepo.Create_start")
+	logrus.Trace("orderRepo.Create start")
 	o, err := c.orderRepo.Create(ctx, pendingOrder)
 	if err != nil {
-		logrus.Debugf("orderRepo.Create_fail || err=%v", err)
+		logrus.Tracef("orderRepo.Create fail err=%v", err)
 		return nil, err
 	}
-	logrus.Debugf("orderRepo.Create_success || order=%v", *o)
+	logrus.Tracef("orderRepo.Create ok order=%v", *o)
 
-	logrus.Debug("broker.PublishEvent_start")
+	logrus.Trace("broker.PublishEvent start")
 	r := &broker.PublishEventReq{
 		Channel:  c.channel,
 		Routing:  broker.Direct,
@@ -99,10 +99,10 @@ func (c createOrderHandler) Handle(ctx context.Context, cmd CreateOrder) (*Creat
 	}
 	err = broker.PublishEvent(ctx, r)
 	if err != nil {
-		logrus.Debugf("broker.PublishEvent_fail || err=%v", err)
+		logrus.Tracef("broker.PublishEvent fail err=%v", err)
 		return nil, errors.Wrap(err, "failed to publish order created event")
 	}
-	logrus.Debugf("broker.PublishEvent_success || broker.PublishEventReq=%v", *r)
+	logrus.Tracef("broker.PublishEvent ok broker.PublishEventReq=%v", *r)
 
 	return &CreateOrderResult{OrderID: o.ID}, nil
 }

@@ -18,15 +18,15 @@ type queryLoggingDecorator[Q, R any] struct {
 func (d queryLoggingDecorator[Q, R]) Handle(ctx context.Context, query Q) (res R, err error) {
 	body, _ := json.Marshal(query)
 	fs := logrus.Fields{
-		"query": actionName(query),
-		"body":  string(body),
+		"query":      actionName(query),
+		"query_body": string(body),
 	}
 	defer func() {
 		if err == nil {
-			logrus.WithContext(ctx).WithFields(fs).Info("query_success")
+			logrus.WithContext(ctx).WithFields(fs).Info("Query ok")
 		} else {
 			fs["query_err"] = err.Error()
-			logrus.WithContext(ctx).WithFields(fs).Error("query_fail")
+			logrus.WithContext(ctx).WithFields(fs).Error("Query fail")
 		}
 	}()
 	res, err = d.handler.Handle(ctx, query)
@@ -42,15 +42,15 @@ type commandLoggingDecorator[C, R any] struct {
 func (d commandLoggingDecorator[C, R]) Handle(ctx context.Context, cmd C) (res R, err error) {
 	body, _ := json.Marshal(cmd)
 	fs := logrus.Fields{
-		"command": actionName(cmd),
-		"body":    string(body),
+		"command":      actionName(cmd),
+		"commond_body": string(body),
 	}
 	defer func() {
 		if err == nil {
-			logrus.WithContext(ctx).WithFields(fs).Info("command_success")
+			logrus.WithContext(ctx).WithFields(fs).Info("Command ok")
 		} else {
 			fs["command_err"] = err.Error()
-			logrus.WithContext(ctx).WithFields(fs).Error("command_fail")
+			logrus.WithContext(ctx).WithFields(fs).Error("Command fail")
 		}
 	}()
 	res, err = d.handler.Handle(ctx, cmd)

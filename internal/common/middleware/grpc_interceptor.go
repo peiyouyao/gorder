@@ -19,16 +19,19 @@ func GRPCUnaryInterceptor(
 	}
 	defer func() {
 		fields["grpc_resp"] = resp
+		lvl := logrus.InfoLevel
 		if err != nil {
 			fields["grpc_err"] = err.Error()
-			logrus.WithContext(ctx).WithFields(fields).Error("grpc_request_out")
+			lvl = logrus.ErrorLevel
 		}
+		logrus.WithContext(ctx).WithFields(fields).Log(lvl, "GRPC request out")
 	}()
 
 	if md, exist := metadata.FromIncomingContext(ctx); exist {
 		fields["grpc_metadata"] = md
 	}
-
 	logrus.WithContext(ctx).WithFields(fields).Info("grpc_request_in")
-	return handler(ctx, req)
+
+	resp, err = handler(ctx, req)
+	return
 }

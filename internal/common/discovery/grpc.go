@@ -24,7 +24,10 @@ func RegisterToConsul(ctx context.Context, serviceName string) (func() error, er
 	go func() {
 		for {
 			if err := registry.HealthCheck(instanceID, serviceName); err != nil {
-				logrus.Panicf("no heart beat from %s to registry, err = %v", serviceName, err)
+				logrus.WithFields(logrus.Fields{
+					"service": serviceName,
+					"err":     err,
+				}).Panic("No heart beat to registry")
 			}
 			time.Sleep(1 * time.Second)
 		}
@@ -32,7 +35,7 @@ func RegisterToConsul(ctx context.Context, serviceName string) (func() error, er
 	logrus.WithFields(logrus.Fields{
 		"servicName": serviceName,
 		"addr":       grpcAddr,
-	}).Info("register to consul")
+	}).Info("Register to consul")
 	return func() error {
 		return registry.Deregister(ctx, instanceID, serviceName)
 	}, nil
@@ -51,6 +54,6 @@ func GetServiceAddr(ctx context.Context, serviceName string) (string, error) {
 		return "", fmt.Errorf("got empty %s addrs from consul", serviceName)
 	}
 	i := rand.Intn(len(addrs))
-	logrus.Infof("Discovered %d instance of %s, addrs=%v", len(addrs), serviceName, addrs)
+	logrus.Infof("Discovered %d instance of %s addrs=%v", len(addrs), serviceName, addrs)
 	return addrs[i], nil
 }

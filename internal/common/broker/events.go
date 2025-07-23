@@ -33,7 +33,7 @@ type PublishEventReq struct {
 
 func PublishEvent(ctx context.Context, p *PublishEventReq) (err error) {
 	_, dlog := logPublishing(ctx, p)
-	defer dlog(nil, &err)
+	defer dlog(&err)
 
 	if err = check(p); err != nil {
 		return err
@@ -45,7 +45,10 @@ func PublishEvent(ctx context.Context, p *PublishEventReq) (err error) {
 	case Direct:
 		return direct(ctx, p)
 	default:
-		logrus.WithContext(ctx).Panicf("unsupported routing type: %s", string(p.Routing))
+		logrus.
+			WithContext(ctx).
+			WithField("routing_type", string(p.Routing)).
+			Panicf("Unsupported routing type")
 	}
 	return nil
 }
@@ -88,7 +91,7 @@ func doPublish(ctx context.Context, ch *amqp091.Channel, exchange, key string, m
 			"exchange": exchange,
 			"key":      key,
 			"q_msg":    msg,
-		}).Warn("publish_event_failed")
+		}).Warn("Publish event fail")
 		return err
 	}
 	return nil
@@ -101,22 +104,20 @@ func check(p *PublishEventReq) error {
 	return nil
 }
 
-func logPublishing(ctx context.Context, p *PublishEventReq) (logrus.Fields, func(any, *error)) {
+func logPublishing(ctx context.Context, p *PublishEventReq) (logrus.Fields, func(*error)) {
 	fields := logrus.Fields{
-		"channel":  p.Channel,
 		"queue":    p.Queue,
 		"routing":  p.Routing,
 		"exchange": p.Exchange,
 		"body":     util.MarshalStringWithoutErr(p.Body),
 	}
 	start := time.Now()
-	return fields, func(resp any, err *error) {
-		level, msg := logrus.InfoLevel, "_mq_publish_success"
+	return fields, func(err *error) {
+		level, msg := logrus.InfoLevel, "MQ publish ok"
 		fields["publish_time_cost"] = time.Since(start).Milliseconds()
-		fields["publish_resp"] = resp
 
 		if err != nil && (*err != nil) {
-			level, msg = logrus.ErrorLevel, "_mq_publish_failed"
+			level, msg = logrus.ErrorLevel, "MQ publish fail"
 			fields["publish_error"] = (*err).Error()
 		}
 

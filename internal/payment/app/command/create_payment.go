@@ -27,7 +27,7 @@ func (c createPaymentHandler) Handle(ctx context.Context, cmd CreatePayment) (li
 	if link, err = c.processor.CreatePaymentLink(ctx, cmd.Order); err != nil {
 		return
 	}
-	logrus.Debug("create_link_from_stripe_success")
+	logrus.Trace("CreatePaymentLink from stripe ok")
 
 	newOrder, err := entity.NewValidOrder(
 		cmd.Order.ID,
@@ -39,14 +39,14 @@ func (c createPaymentHandler) Handle(ctx context.Context, cmd CreatePayment) (li
 	if err != nil {
 		return
 	}
-	logrus.Debugf("NewValidOrder_success || newOrder=%v", *newOrder)
+	logrus.Tracef("NewValidOrder ok newOrder=%v", *newOrder)
 
-	logrus.Debug("orderGRPC.UpdateOrder_start")
+	logrus.Trace("orderGRPC.UpdateOrder start")
 	err = c.orderGRPC.UpdateOrder(ctx, convert.OrderEntityToProto(newOrder)) // 发送 grpc 给 order
 	if err != nil {
-		logrus.Debug("orderGRPC.UpdateOrder_fail")
+		logrus.Trace("orderGRPC.UpdateOrder fail")
 	}
-	logrus.Debug("orderGRPC.UpdateOrder_success")
+	logrus.Trace("orderGRPC.UpdateOrder ok")
 	return link, err
 }
 

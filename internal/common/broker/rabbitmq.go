@@ -73,8 +73,15 @@ func createDLX(ch *amqp.Channel) (err error) {
 
 // confirm consumer **receive** a message
 func HandleRetry(ctx context.Context, ch *amqp.Channel, d *amqp.Delivery) (err error) {
-	dlog := logRetry(ctx, d.MessageId)
-	defer dlog(err)
+	start := time.Now()
+	defer func() {
+		if err != nil {
+			logrus.WithField("q_msg_id", d.MessageId).Error("Msg move to DLQ Retry fail")
+		} else {
+			logrus.WithField("retry_time_cost", time.Since(start)).Info("Retry ok")
+		}
+	}()
+
 	if d.Headers == nil {
 		d.Headers = amqp.Table{}
 	}
@@ -93,32 +100,17 @@ func HandleRetry(ctx context.Context, ch *amqp.Channel, d *amqp.Delivery) (err e
 	}
 
 	if retryCnt >= maxRetryCnt {
-		logrus.Infof("moveing_to_dlq || msg_id = %s", d.MessageId)
 		err = ch.PublishWithContext(ctx, "", dlq, false, false, publishing)
 		return
 	}
 
-	logrus.Infof("retrying_message || msg_id = %s || count=%d", d.MessageId, retryCnt)
+	logrus.WithFields(logrus.Fields{
+		"retry_msg_id": d.MessageId,
+		"retry_cnt":    retryCnt,
+	}).Warn("Retrying")
+
 	time.Sleep(time.Second * time.Duration(retryCnt))
 	err = ch.PublishWithContext(ctx, d.Exchange, d.RoutingKey, false, false, publishing)
-	return
-}
-
-func logRetry(ctx context.Context, msgId string) (dlog func(err error)) {
-	start := time.Now()
-	fs := logrus.Fields{
-		"retry_msg_id": msgId,
-	}
-
-	dlog = func(err error) {
-		fs["retry_time_cost"] = time.Since(start)
-		if err == nil {
-			logrus.WithContext(ctx).WithFields(fs).Info("retry_success")
-		} else {
-			fs["retry_err"] = err.Error()
-			logrus.WithContext(ctx).WithFields(fs).Error("retry_fail")
-		}
-	}
 	return
 }
 

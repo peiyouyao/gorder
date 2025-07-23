@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"io"
 
 	"github.com/gin-gonic/gin"
 	"github.com/peiyouyao/gorder/common/broker"
@@ -21,8 +20,6 @@ import (
 )
 
 func init() {
-	gin.DefaultWriter = io.Discard
-	gin.DefaultErrorWriter = io.Discard
 	logging.Init()
 }
 

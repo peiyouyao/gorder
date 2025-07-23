@@ -47,7 +47,7 @@ func NewMySQL() *MySQL {
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		logrus.Panicf("init mysql wrong %v", err)
+		logrus.Panicf("Init mysql wrong %v", err)
 	}
 	return &MySQL{db: db}
 }
@@ -115,12 +115,12 @@ func logMySQL(ctx context.Context, cmd string, args ...any) (logrus.Fields, func
 	}
 	start := time.Now()
 	return fields, func(resp any, err *error) {
-		level, msg := logrus.InfoLevel, "mysql_success"
+		level, msg := logrus.InfoLevel, "MySQL ok"
 		fields["mysql_cost"] = time.Since(start).Milliseconds()
 		fields["mysql_resp"] = resp
 
 		if err != nil && (*err != nil) {
-			level, msg = logrus.ErrorLevel, "mysql_error"
+			level, msg = logrus.ErrorLevel, "MySQL fail"
 			fields["mysql_err"] = (*err).Error()
 		}
 

@@ -34,15 +34,16 @@ func (h *PaymentHandler) RegisterRoutes(c *gin.Engine) {
 	c.POST("/api/webhook", h.handleWebhook)
 }
 
+// 获取 paid.order 信息, 发布 paid.order
 func (h *PaymentHandler) handleWebhook(c *gin.Context) {
-	logrus.WithContext(c.Request.Context()).Info("receive_webhook_from_stripe")
+	logrus.WithContext(c.Request.Context()).Info("Receive webhook from stripe")
 
 	var err error
 	defer func() {
 		if err != nil {
-			logrus.WithContext(c.Request.Context()).Warnf("handle_webhook_fail || err=%s", err.Error())
+			logrus.WithContext(c.Request.Context()).Warnf("Handle webhook fail err=%s", err.Error())
 		} else {
-			logrus.WithContext(c.Request.Context()).Info("handle_webhook_success")
+			logrus.WithContext(c.Request.Context()).Info("Handle webhook ok")
 		}
 	}()
 
@@ -50,7 +51,7 @@ func (h *PaymentHandler) handleWebhook(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxBodyBytes)
 	payload, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		logrus.Infof("read_request_body_fail || err=%v", err)
+		logrus.Infof("Read request body fail err=%v", err)
 		c.JSON(http.StatusServiceUnavailable, err.Error())
 		return
 	}
@@ -59,17 +60,17 @@ func (h *PaymentHandler) handleWebhook(c *gin.Context) {
 		viper.GetString("ENDPOINT_STRIPE_SECRET"))
 
 	if err != nil {
-		logrus.Infof("verifying_webhook_signature_fail || err=%v", err)
+		logrus.Infof("Verifying webhook signature fail err=%v", err)
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	switch event.Type {
 	case stripe.EventTypeCheckoutSessionCompleted:
-		logrus.Debug("user_paid")
+		logrus.Trace("User paid")
 		var session stripe.CheckoutSession
 		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
-			logrus.Infof("unmarshal_event.Data.Raw_fail || err = %v", err)
+			logrus.Errorf("Unmarshal event.Data.Raw fail err = %v", err)
 			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
@@ -92,9 +93,9 @@ func (h *PaymentHandler) handleWebhook(c *gin.Context) {
 				session.Metadata["paymentLink"], // 没有取到
 				items,
 			)
-			logrus.Debugf("receive_user_paid || order=%v", o)
+			logrus.Tracef("Upate paymentLink and Status order=%v", o)
 
-			logrus.Debug("broker.PublishEvent")
+			logrus.Trace("broker.PublishEvent")
 			err = broker.PublishEvent(ctx, &broker.PublishEventReq{
 				Channel:  h.channel,
 				Routing:  broker.Fanout,
@@ -103,9 +104,9 @@ func (h *PaymentHandler) handleWebhook(c *gin.Context) {
 				Body:     *o,
 			})
 			if err != nil {
-				logrus.Debug("broker.PublishEvent_fail")
+				logrus.Trace("broker.PublishEvent fail")
 			}
-			logrus.Debug("broker.PublishEvent_success")
+			logrus.Trace("broker.PublishEvent success")
 		}
 	}
 	c.JSON(http.StatusOK, nil)

@@ -64,9 +64,9 @@ func (r *Registry) Register(ctx context.Context, instanceID, serviceName, hostPo
 
 func (r *Registry) Deregister(ctx context.Context, instanceID, serviceName string) error {
 	logrus.WithFields(logrus.Fields{
-		"instanceID":  instanceID,
-		"serviceName": serviceName,
-	}).Info("deregister from consul")
+		"instance_id": instanceID,
+		"service":     serviceName,
+	}).Info("Deregister from consul")
 	return r.client.Agent().CheckDeregister(instanceID)
 }
 

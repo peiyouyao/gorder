@@ -38,7 +38,7 @@ func (m *OrderRepositoryInmem) Create(_ context.Context, order *domain.Order) (*
 	logrus.WithFields(logrus.Fields{
 		"input_order":        order,
 		"store_after_create": m.store,
-	}).Debug("memeory_order_repo_create")
+	}).Debug("OrderRepositoryInmem.Create")
 	return res, nil
 }
 
@@ -47,7 +47,7 @@ func (m *OrderRepositoryInmem) Get(ctx context.Context, id, customerID string) (
 	defer m.lock.RUnlock()
 	for _, o := range m.store {
 		if o.ID == id && o.CustomerID == customerID {
-			logrus.Debugf("memory_order_repo_get || found || id=%s || customerID=%s || res=%+v", id, customerID, *o)
+			logrus.Debugf("OrderRepositoryInmem.Get id=%s customerID=%s res=%+v", id, customerID, *o)
 			return o, nil
 		}
 	}

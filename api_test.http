@@ -31,28 +31,5 @@ Content-Type: application/json
   ]
 }
 
-### buy shit eruo
-POST http://127.0.0.1:8282/api/customer/111/orders
-Content-Type: application/json
-
-{
-  "customer_id": "111",
-  "items": [
-    {"id": "prod_SYcvt7D1E8CIFK", "quantity": 1 }
-  ]
-}
-
-### buy fries and shit
-POST http://127.0.0.1:8282/api/customer/111/orders
-Content-Type: application/json
-
-{
-  "customer_id": "111",
-  "items": [
-    {"id": "prod_SSGOnM6DXikQ7y", "quantity": 3 },
-    {"id": "prod_SYcvt7D1E8CIFK", "quantity": 5 }
-  ]
-}
-
 ###
-GET http://127.0.0.1:8282/api/customer/111/orders/687f82b662eb1a602093d495
+GET http://127.0.0.1:8282/api/customer/111/orders/68805cf26a12893175cb1270

@@ -59,9 +59,9 @@ func main() {
 
 	go func() {
 		<-sigs
-		logrus.Info("receive signal, exiting ...")
+		logrus.Info("Receive signal, exiting ...")
 		os.Exit(0)
 	}()
-	logrus.Println("to exit, press ctrl + c")
+	logrus.Println("To exit, press Ctrl+C")
 	select {}
 }

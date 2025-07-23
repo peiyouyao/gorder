@@ -54,18 +54,18 @@ func (h checkIfItemsInStockHandler) Handle(ctx context.Context, query CheckIfIte
 	var lkerr error
 	lockKey := getLockKey(query)
 	if lkerr = lock(ctx, lockKey); lkerr != nil {
-		return nil, errors.Wrapf(err, "redis lock error||key=%s", lockKey)
+		return nil, errors.Wrapf(err, "Redis lock error key=%s", lockKey)
 	}
 	defer func() {
 		if lkerr = unlock(ctx, lockKey); lkerr != nil {
-			logrus.WithContext(ctx).Warnf("redis_unlock_fail || err=%v", lkerr)
+			logrus.WithContext(ctx).Warnf("Redis unlock fail err=%v", lkerr)
 		}
 	}()
 
 	for _, it := range query.Items {
 		priceID, err := h.stripeAPI.GetPriceByProductID(ctx, it.ID)
 		if err != nil {
-			logrus.WithContext(ctx).Warnf("GetPriceByProductID_from_stripe_fail || item_id=%s || err=%v", it.ID, err)
+			logrus.WithContext(ctx).Warnf("GetPriceByProductID from stripe fail item_id=%s err=%v", it.ID, err)
 			return nil, err
 		}
 
@@ -85,9 +85,9 @@ func (h checkIfItemsInStockHandler) Handle(ctx context.Context, query CheckIfIte
 		"res":   res,
 	}
 	if err != nil {
-		logrus.WithContext(ctx).WithFields(fs).Error("checkIfItemsInStock_fail || err=%v", err)
+		logrus.WithContext(ctx).WithFields(fs).Errorf("checkIfItemsInStock fail err=%v", err)
 	} else {
-		logrus.WithContext(ctx).WithFields(fs).Info("checkIfItemsInStock_success")
+		logrus.WithContext(ctx).WithFields(fs).Info("checkIfItemsInStock ok")
 	}
 	return res, nil
 }

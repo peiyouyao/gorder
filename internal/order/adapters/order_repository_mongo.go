@@ -42,7 +42,7 @@ func (r *OrderRepositoryMongo) Create(ctx context.Context, order *domain.Order) 
 	fs := logrus.Fields{
 		"order": order,
 	}
-	dlog := logMongoDB(ctx, "mongo_create", fs)
+	dlog := logMongoDB(ctx, "OrderRepositoryMongo.Create", fs)
 	defer dlog(created, err)
 
 	write := r.marshalToModel(order)
@@ -59,7 +59,7 @@ func (r *OrderRepositoryMongo) Get(ctx context.Context, id, customerID string) (
 	fs := logrus.Fields{
 		"customer_id": customerID,
 	}
-	dlog := logMongoDB(ctx, "mongo_get", fs)
+	dlog := logMongoDB(ctx, "OrderRepositoryMongo.Get", fs)
 	defer dlog(got, err)
 
 	read := &orderModel{}
@@ -81,7 +81,7 @@ func (r *OrderRepositoryMongo) Update(
 	fs := logrus.Fields{
 		"order": order,
 	}
-	dlog := logMongoDB(ctx, "mongo_update", fs)
+	dlog := logMongoDB(ctx, "OrderRepositoryMongo.Update", fs)
 	defer dlog(updateRes, err)
 
 	if order == nil {
@@ -165,10 +165,10 @@ func logMongoDB(ctx context.Context, method string, fields logrus.Fields) (dlog 
 		fs["mongo_res"] = res
 		fs["mongo_time_cost"] = time.Since(start)
 		if err == nil {
-			logrus.WithContext(ctx).WithFields(fs).Infof("%s_success", method)
+			logrus.WithContext(ctx).WithFields(fs).Infof("%s ok", method)
 		} else {
 			fs["mongo_err"] = err.Error()
-			logrus.WithContext(ctx).WithFields(fs).Errorf("%s_fail", method)
+			logrus.WithContext(ctx).WithFields(fs).Errorf("%s fail", method)
 		}
 	}
 	return

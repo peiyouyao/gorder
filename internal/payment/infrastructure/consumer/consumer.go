@@ -35,7 +35,7 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 
 	msgs, err := ch.Consume(q.Name, "", false, false, false, false, nil)
 	if err != nil {
-		logrus.Warnf("consume_fail || queue=%s || err=%v", q.Name, err)
+		logrus.Warnf("Consume fail queue=%s err=%v", q.Name, err)
 	}
 
 	for msg := range msgs {
@@ -44,7 +44,11 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 }
 
 func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Queue) {
-	logrus.Infof("receive_order.create || from=%s || msg_id=%s", q.Name, msg.MessageId)
+	logrus.WithFields(logrus.Fields{
+		"from_q": q.Name,
+		"msg_id": msg.MessageId,
+	}).Info("Receive order.create msg")
+	logrus.Trace("Receive order.create")
 
 	ctx := broker.ExtractRabbitMQHeaders(context.Background(), msg.Headers)
 	tr := otel.Tracer("rabbitmq")
@@ -59,32 +63,32 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 				"q_msg":  msg,
 				"err":    err.Error(),
 			}
-			logrus.WithContext(ctx).WithFields(fs).Warn("mq_consume_failed")
+			logrus.WithContext(ctx).WithFields(fs).Warn("MQ consume fail")
 			_ = msg.Nack(false, false)
 		} else {
-			logrus.WithContext(ctx).Info("mq_consume_success")
+			logrus.WithContext(ctx).Info("MQ consume ok")
 			_ = msg.Ack(false)
 		}
 	}()
 
 	o := entity.Order{}
 	if err = json.Unmarshal(msg.Body, &o); err != nil {
-		logrus.Infof("unmarshal_fail || err=%s", err.Error())
+		logrus.Warnf("Unmarshal fail err=%s", err.Error())
 		return
 	}
-	logrus.Debugf("created_order=%v", o)
+	logrus.Tracef("sended order=%v", o)
 
-	logrus.Debug("app.Commands.CreatePayment.Handle_start")
+	logrus.Trace("app.Commands.CreatePayment.Handle start")
 	if _, err = c.app.Commands.CreatePayment.Handle(ctx, command.CreatePayment{Order: &o}); err != nil {
-		logrus.Warnf("create_payment_fail || order_id=%s || err=%s", o.ID, err.Error())
+		logrus.Warnf("Create payment fail order_id=%s err=%s", o.ID, err.Error())
 		// retry
 		if err = broker.HandleRetry(ctx, ch, &msg); err != nil {
-			logrus.Warnf("retry_fail || message_id=%s || err=%v", msg.MessageId, err)
+			logrus.Warnf("Retry fail message_id=%s err=%v", msg.MessageId, err)
 		}
 		return
 	}
-	logrus.Debug("app.Commands.CreatePayment.Handle_success")
+	logrus.Trace("app.Commands.CreatePayment.Handle ok")
 
 	span.AddEvent("payment.craeted")
-	logrus.Info("consume_success")
+	logrus.Info("Consume success")
 }

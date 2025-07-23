@@ -47,6 +47,10 @@ func getRelativePathFromCaller() (relPath string, err error) {
 	}
 	_, here, _, _ := runtime.Caller(0)
 	relPath, err = filepath.Rel(callerPwd, filepath.Dir(here))
-	logrus.Infof("caller from: %s, here: %s, relpath: %s", callerPwd, here, relPath)
+	logrus.WithFields(logrus.Fields{
+		"caller":   callerPwd,
+		"here":     here,
+		"rel_path": relPath,
+	}).Debug("Pro rel path")
 	return
 }

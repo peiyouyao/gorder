@@ -53,7 +53,10 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 }
 
 func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Queue) {
-	logrus.Infof("receive_msg || from=%s || msg_id=%s", q.Name, msg.MessageId)
+	logrus.WithFields(logrus.Fields{
+		"from_q": q.Name,
+		"msg_id": msg.MessageId,
+	}).Info("Receive order.create msg")
 
 	tr := otel.Tracer("rabbitmq")
 	ctx, span := tr.Start(
@@ -70,27 +73,27 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 				"q_msg":  msg,
 				"err":    err.Error(),
 			}
-			logrus.WithContext(ctx).WithFields(fs).Warn("mq_consume_failed")
+			logrus.WithContext(ctx).WithFields(fs).Warn("MQ consume fail")
 			_ = msg.Nack(false, false)
 		} else {
-			logrus.WithContext(ctx).Info("mq_consume_success")
+			logrus.WithContext(ctx).Info("MQ consume ok")
 			_ = msg.Ack(false)
 		}
 	}()
 
 	o := &entity.Order{}
 	if err = json.Unmarshal(msg.Body, o); err != nil {
-		logrus.Infof("unmarshal_fail || err=%s", err.Error())
+		logrus.WithField("err", err.Error()).Warn("Unmarshal fail")
 		return
 	}
 
 	if o.Status != constants.OrderStatusPaid {
-		err = errors.New("order not paid, can not cook")
+		err = errors.New("order not paid can not cook")
 		return
 	}
 	cook(ctx, o)
 
-	span.AddEvent(fmt.Sprintf("order_cooked.%v", o))
+	span.AddEvent(fmt.Sprintf("order.cooked.%v", o))
 	if err := c.orderGRPC.UpdateOrder(ctx, &orderpb.Order{
 		ID:          o.ID,
 		CustomerID:  o.CustomerID,
@@ -104,20 +107,23 @@ func (c *Consumer) handleMessage(ch *amqp.Channel, msg amqp.Delivery, q amqp.Que
 			"q_msg":    msg,
 			"err":      err.Error(),
 		}
-		logrus.WithContext(ctx).WithFields(fs).Error("update_order_fail")
+		logrus.WithContext(ctx).WithFields(fs).Error("Update order fail")
 		// retry
 		if err = broker.HandleRetry(ctx, ch, &msg); err != nil {
-			logrus.Warnf("retry_fail || message_id=%s || err=%v", msg.MessageId, err)
+			logrus.WithFields(logrus.Fields{
+				"msg_id": msg.MessageId,
+				"err":    err.Error(),
+			}).Warn("Retry fail")
 		}
 		return
 	}
 
 	span.AddEvent("kitchen.order.finished.updated")
-	logrus.Info("consume_success")
+	logrus.Info("Consume create.order ok")
 }
 
 func cook(ctx context.Context, o *entity.Order) {
-	logrus.WithContext(ctx).Infof("cooking || order_id=%s", o.ID)
+	logrus.WithContext(ctx).Infof("Cooking order_id=%s", o.ID)
 	time.Sleep(5 * time.Second)
-	logrus.WithContext(ctx).Infof("cooking_done || order_id=%s", o.ID)
+	logrus.WithContext(ctx).Infof("Cooking done order_id=%s", o.ID)
 }
